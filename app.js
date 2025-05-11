@@ -13,8 +13,7 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
+require('./middlewares/core')(app);
 
 // Rutas
 app.use(pacientesRoutes); 
@@ -23,9 +22,7 @@ app.get('/', (req, res) => {
   res.render('iniciohospital');
 });
 // Middleware de prueba
-app.use((req, res) => {
-  res.status(404).render('404', { mensaje: 'Página no encontrada' });
-});
+app.use(require('./middlewares/notFound'));
 
 
 // Sincronizar modelos Sequelize

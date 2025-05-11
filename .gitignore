@@ -1,0 +1,32 @@
+# Dependencias
+/node_modules
+
+# Entorno
+.env
+
+# Archivos de log
+logs
+*.log
+npm-debug.log*
+
+# Directorios de producción o build
+/dist
+/build
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# SQLite (si se usara)
+*.sqlite
+*.sqlite3
+
+# Archivos temporales de VSCode
+.vscode/*
+!.vscode/settings.json
+
+# Backup de BD si es muy grande
+*.sql
+
+# Archivos de sistema Linux/macOS
+*.swp
