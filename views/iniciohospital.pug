@@ -1,8 +1,8 @@
-doctype html
-html(lang="en")
-    head
-        meta(charset="UTF-8")
-        meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        title Inicio
-    body 
-    h1 meke
+extends layout
+
+block content
+  .container.text-center.mt-5
+    h1 Bienvenido al Sistema Hospitalario e Internacion
+    p.lead Selecciona una opción en el menú lateral para comenzar.
+
+    img(src="/img/img-internacion.jpg", alt="Sala de Internación", class="img-fluid mt-4 shadow", style="max-width: 1000px; border-radius: 5px;")

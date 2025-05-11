@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  h2 Lista de Pacientes
+
+  table#tablaPacientes.table.table-striped
+    thead
+      tr
+        th N° Paciente
+        th Nombre
+        th Apellido
+        th DNI
+        th Edad
+        th Genero
+        th Telefono
+    tbody
+
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
+
+  script.
+    $(document).ready(function () {
+      $('#tablaPacientes').DataTable({
+        ajax: '/api/pacientes',
+        columns: [
+          { data: 'id_paciente' },
+          { data: 'nombre' },
+          { data: 'apellido' },
+          { data: 'dni' },
+          { data: 'edad' },
+          { data: 'genero' },
+          { data: 'telefono' }
+        ]
+      });
+    });
