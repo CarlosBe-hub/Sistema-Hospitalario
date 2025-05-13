@@ -12,7 +12,6 @@ Paciente.init({
   nombre: DataTypes.STRING,
   apellido: DataTypes.STRING,
   genero: DataTypes.STRING,
-  edad: DataTypes.INTEGER,
   dni: DataTypes.STRING,
   altura: DataTypes.FLOAT,
   peso: DataTypes.FLOAT,
@@ -20,7 +19,14 @@ Paciente.init({
   fecha_nacimiento: DataTypes.DATE,
   telefono: DataTypes.STRING,
   contacto_emergencia: DataTypes.STRING,
-  direccion: DataTypes.STRING
+  direccion: DataTypes.STRING,
+
+  estado: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Activo'
+  }
+
 }, {
   sequelize,
   modelName: 'Paciente',

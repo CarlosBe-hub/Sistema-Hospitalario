@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  h2 Editar Paciente
+
+  form(action=`/pacientes/${paciente.id_paciente}?_method=PUT` method="POST")
+    input(type="hidden", name="_method", value="PUT")
+    .mb-3
+      label.form-label Nombre
+      input.form-control(type="text", name="nombre", value=paciente.nombre required)
+
+    .mb-3
+      label.form-label Apellido
+      input.form-control(type="text", name="apellido", value=paciente.apellido required)
+
+    .mb-3
+      label.form-label DNI
+      input.form-control(type="text", name="dni", value=paciente.dni required)
+
+    .mb-3
+      label.form-label Fecha de Nacimiento
+      input.form-control(type="date", name="fecha_nacimiento", value=paciente.fecha_nacimiento.toISOString().split('T')[0])
+
+    button.btn.btn-primary Guardar cambios
+    a.btn.btn-secondary(href="/pacientes") Cancelar

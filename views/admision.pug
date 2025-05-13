@@ -1,60 +1,40 @@
 extends layout
 
 block content
-  h2 Nuevo Paciente
+  h2 Nueva Admisión
 
   form(action="/admision" method="POST")
     .mb-3
-      label.form-label(for="nombre") Nombre
-      input.form-control(type="text" name="nombre" required)
+      label(for="id_paciente") Paciente
+      select.form-select(name="id_paciente" required)
+        option(value="") -- Selecciona un paciente --
+        each paciente in pacientes
+          option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido
 
     .mb-3
-      label.form-label(for="apellido") Apellido
-      input.form-control(type="text" name="apellido" required)
+      label(for="fecha_admision") Fecha de Admisión
+      input.form-control(type="datetime-local" name="fecha_admision" required)
 
     .mb-3
-      label.form-label(for="dni") DNI
-      input.form-control(type="text" name="dni" required)
+      label(for="diagnostico") Diagnóstico inicial
+      textarea.form-control(name="diagnostico" required)
 
     .mb-3
-      label.form-label(for="edad") Edad
-      input.form-control(type="number" name="edad" min="0" required)
+      label(for="estado") Estado del paciente
+      select.form-select(name="estado" required)
+        option(value="Estable") Estable
+        option(value="Grave") Grave
+        option(value="Crítico") Crítico
 
     .mb-3
-      label.form-label(for="genero") Genero
-      select.form-select(name="genero" required)
-        option(value="") -- Selecciona --
-        option(value="Masculino") Masculino
-        option(value="Femenino") Femenino
-        option(value="Otro") Otro
+      label(for="id_habitacion") Habitación
+      select.form-select(name="id_habitacion" required)
+        option(value="") -- Selecciona habitación --
+        each hab in habitaciones
+          option(value=hab.id_habitacion)= 'Hab. ' + hab.id_habitacion
 
-    .mb-3
-      label.form-label(for="telefono") Teléfono
-      input.form-control(type="text" name="telefono")
+    // Si todavía no hay internación creada, podés hacer esto temporalmente:
+    input(type="hidden" name="id_internacion" value="1")
 
-    .mb-3
-      label.form-label(for="altura") Altura (cm)
-      input.form-control(type="number" name="altura" step="0.1")
-
-    .mb-3
-      label.form-label(for="peso") Peso (kg)
-      input.form-control(type="number" name="peso" step="0.1")
-
-    .mb-3
-      label.form-label(for="prepaga") Prepaga
-      input.form-control(type="text" name="prepaga")
-
-    .mb-3
-      label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
-      input.form-control(type="date" name="fecha_nacimiento")
-
-    .mb-3
-      label.form-label(for="contacto_emergencia") Contacto de Emergencia
-      input.form-control(type="text" name="contacto_emergencia")
-
-    .mb-3
-      label.form-label(for="direccion") Dirección
-      input.form-control(type="text" name="direccion")
-
-    button.btn.btn-primary(type="submit") Guardar
-    a.btn.btn-secondary(href="/pacientes") Cancelar
+    button.btn.btn-success(type="submit") Admitir Paciente
+    a.btn.btn-secondary(href="/") Cancelar

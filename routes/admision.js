@@ -3,6 +3,6 @@ const router = express.Router();
 const admisionController = require('../controllers/admisionController');
 
 router.get('/admision', admisionController.mostrarFormulario);
-router.post('/admision', admisionController.guardarPaciente);
+router.post('/admision', admisionController.guardarAdmision);
 
 module.exports = router;

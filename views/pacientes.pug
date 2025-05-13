@@ -11,6 +11,7 @@ block content
         th Apellido
         th DNI
         th Edad
+        th Fecha Nac.
         th Genero
         th Telefono
     tbody
@@ -29,8 +30,12 @@ block content
           { data: 'apellido' },
           { data: 'dni' },
           { data: 'edad' },
+          { data: 'fecha_nacimiento' },
           { data: 'genero' },
           { data: 'telefono' }
-        ]
+        ],
+        language: {
+          url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        }
       });
     });
