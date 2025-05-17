@@ -3,35 +3,64 @@ extends layout
 block content
   h2 Editar Paciente
 
-  form(action=`/pacientes/${paciente.id_paciente}?_method=PUT` method="POST")
-    input(type="hidden", name="_method", value="PUT")
+  form(method="POST", action=`/pacientes/${paciente.id_paciente}?_method=PUT`)
+    .mb-3
+      label.form-label(for="nombre") Nombre
+      input.form-control(type="text", name="nombre", required, value=paciente.nombre)
 
     .mb-3
-      label.form-label Nombre
-      input.form-control(type="text", name="nombre", value=paciente.nombre required)
+      label.form-label(for="apellido") Apellido
+      input.form-control(type="text", name="apellido", required, value=paciente.apellido)
 
     .mb-3
-      label.form-label Apellido
-      input.form-control(type="text", name="apellido", value=paciente.apellido required)
+      label.form-label(for="dni") DNI
+      input.form-control(type="text", name="dni", required, value=paciente.dni)
 
     .mb-3
-      label.form-label DNI
-      input.form-control(type="text", name="dni", value=paciente.dni required)
+      label.form-label(for="edad") Edad
+      input.form-control(type="number", name="edad", required, value=paciente.edad)
 
     .mb-3
-      label.form-label Fecha de Nacimiento
-      input.form-control(type="date", name="fecha_nacimiento", value=paciente.fecha_nacimiento.toISOString().split('T')[0])
+      label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
+      input.form-control(type="date", name="fecha_nacimiento", required, value=paciente.fecha_nacimiento.toISOString().substring(0, 10))
 
     .mb-3
-      label.form-label Teléfono
+      label.form-label(for="genero") Género
+      select.form-select(name="genero", required)
+        option(value="") -- Selecciona --
+        option(value="Masculino", selected=paciente.genero === 'Masculino') Masculino
+        option(value="Femenino", selected=paciente.genero === 'Femenino') Femenino
+        option(value="Otro", selected=paciente.genero === 'Otro') Otro
+
+    .mb-3
+      label.form-label(for="telefono") Teléfono
       input.form-control(type="text", name="telefono", value=paciente.telefono)
 
     .mb-3
-      label.form-label Género
-      select.form-select(name="genero")
-        option(value="Masculino" selected=paciente.genero==='Masculino') Masculino
-        option(value="Femenino" selected=paciente.genero==='Femenino') Femenino
-        option(value="Otro" selected=paciente.genero==='Otro') Otro
+      label.form-label(for="altura") Altura (cm)
+      input.form-control(type="number", step="0.01", name="altura", value=paciente.altura)
 
-    button.btn.btn-primary Guardar Cambios
+    .mb-3
+      label.form-label(for="peso") Peso (kg)
+      input.form-control(type="number", step="0.01", name="peso", value=paciente.peso)
+
+    .mb-3
+      label.form-label(for="prepaga") Obra Social
+      input.form-control(type="text", name="prepaga", value=paciente.prepaga)
+
+    .mb-3
+      label.form-label(for="contacto_emergencia") Contacto de Emergencia
+      input.form-control(type="text", name="contacto_emergencia", value=paciente.contacto_emergencia)
+
+    .mb-3
+      label.form-label(for="direccion") Dirección
+      input.form-control(type="text", name="direccion", value=paciente.direccion)
+
+    .mb-3
+      label.form-label(for="estado") Estado
+      select.form-select(name="estado")
+        option(value="Activo", selected=paciente.estado === 'Activo') Activo
+        option(value="Inactivo", selected=paciente.estado === 'Inactivo') Inactivo
+
+    button.btn.btn-primary(type="submit") Guardar Cambios
     a.btn.btn-secondary(href="/pacientes") Cancelar

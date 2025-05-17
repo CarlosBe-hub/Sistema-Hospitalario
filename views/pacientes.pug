@@ -3,9 +3,11 @@ extends layout
 block content
   h2 Lista de Pacientes
 
-  a.btn.btn-success.mb-3(href="/admision") + Nuevo Paciente
+  // Botón para abrir el modal
+  button.btn.btn-success.mb-3(data-bs-toggle="modal", data-bs-target="#nuevoPacienteModal") + Nuevo Paciente
 
-  table#tablaPacientes.table.table-striped
+  // Tabla de pacientes
+  table.table.table-striped
     thead
       tr
         th N° Paciente
@@ -16,52 +18,149 @@ block content
         th Fecha Nac.
         th Género
         th Teléfono
+        th Altura
+        th Peso
+        th Obra Social
+        th Contacto Emergencia
+        th Dirección
         th Estado
         th Acciones
     tbody
+      each paciente in pacientes
+        tr
+          td= paciente.id_paciente
+          td= paciente.nombre
+          td= paciente.apellido
+          td= paciente.dni
+          td= paciente.edad
+          td= paciente.fechaISO ? paciente.fechaISO.substring(0, 10) : ''
+          td= paciente.genero
+          td= paciente.telefono
+          td= paciente.altura
+          td= paciente.peso
+          td= paciente.prepaga
+          td= paciente.contacto_emergencia
+          td= paciente.direccion
+          td
+            button.btn.btn-sm(
+              class=paciente.estado === 'Activo' ? 'btn-success' : 'btn-secondary',
+              onclick=`toggleEstado(${paciente.id_paciente}, this)`
+            )= paciente.estado
+          td
+            a.btn.btn-warning.btn-sm(href=`/pacientes/${paciente.id_paciente}/editar`) Editar
+            form(method="POST", action=`/pacientes/${paciente.id_paciente}?_method=DELETE`, style="display:inline")
+              button.btn.btn-danger.btn-sm(type="submit", onclick="return confirm('¿Eliminar este paciente?')") Eliminar
 
-  // Estilos y scripts necesarios
-  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
-  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
-  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  // Modal de nuevo paciente
+  .modal.fade#nuevoPacienteModal(tabindex="-1", aria-labelledby="nuevoPacienteModalLabel", aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title#nuevoPacienteModalLabel Nuevo Paciente
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
+        form(method="POST", action="/pacientes")
+          .modal-body
+            .mb-3
+              label.form-label(for="nombre") Nombre
+              input.form-control(type="text", name="nombre", required)
 
+            .mb-3
+              label.form-label(for="apellido") Apellido
+              input.form-control(type="text", name="apellido", required)
+
+            .mb-3
+              label.form-label(for="dni") DNI
+              input.form-control(type="text", name="dni", required)
+
+            .mb-3
+              label.form-label(for="edad") Edad
+              input.form-control(type="number", name="edad", required)
+
+            .mb-3
+              label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
+              input.form-control(type="date", name="fecha_nacimiento", required)
+
+            .mb-3
+              label.form-label(for="genero") Género
+              select.form-select(name="genero", required)
+                option(value="") -- Selecciona --
+                option(value="Masculino") Masculino
+                option(value="Femenino") Femenino
+                option(value="Otro") Otro
+
+            .mb-3
+              label.form-label(for="telefono") Teléfono
+              input.form-control(type="text", name="telefono")
+
+            .mb-3
+              label.form-label(for="altura") Altura (cm)
+              input.form-control(type="number", name="altura", step="0.01")
+
+            .mb-3
+              label.form-label(for="peso") Peso (kg)
+              input.form-control(type="number", name="peso", step="0.01")
+
+            .mb-3
+              label.form-label(for="prepaga") Obra Social
+              input.form-control(type="text", name="prepaga")
+
+            .mb-3
+              label.form-label(for="contacto_emergencia") Contacto de Emergencia
+              input.form-control(type="text", name="contacto_emergencia")
+
+            .mb-3
+              label.form-label(for="direccion") Dirección
+              input.form-control(type="text", name="direccion")
+
+            .mb-3
+              label.form-label(for="estado") Estado
+              select.form-select(name="estado")
+                option(value="Activo") Activo
+                option(value="Inactivo") Inactivo
+
+          .modal-footer
+            button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
+            button.btn.btn-primary(type="submit") Guardar
+
+  // Contenedor para Toast
+  #toastContainer(position="fixed", class="bottom-0 end-0 p-3", style="z-index: 9999")
+    .toast#estadoToast(role="alert", aria-live="assertive", aria-atomic="true")
+      .toast-header
+        strong.me-auto Sistema
+        small.text-muted Ahora
+        button.btn-close(type="button", data-bs-dismiss="toast", aria-label="Cerrar")
+      .toast-body#toastBody Estado actualizado correctamente.
+
+  // Script para alternar estado y mostrar Toast con color
   script.
-    $(document).ready(function () {
-      $('#tablaPacientes').DataTable({
-        ajax: '/api/pacientes',
-        columns: [
-          { data: 'id_paciente' },
-          { data: 'nombre' },
-          { data: 'apellido' },
-          { data: 'dni' },
-          { data: 'edad' },
-          { data: 'fecha_nacimiento' },
-          { data: 'genero' },
-          { data: 'telefono' },
-          {
-            data: 'estado',
-            render: function (estado) {
-              return estado === 'Activo'
-                ? '<span class="badge bg-success">Activo</span>'
-                : '<span class="badge bg-danger">Inactivo</span>';
-            }
-          },
-          {
-            data: 'id_paciente',
-            render: function (id) {
-              return `
-                <a href="/pacientes/${id}/editar" class="btn btn-sm btn-warning me-1">Editar</a>
-                <form method="POST" action="/pacientes/${id}?_method=DELETE" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este paciente?')">Eliminar</button>
-                </form>
-              `;
-            },
-            orderable: false,
-            searchable: false
-          }
-        ],
-        language: {
-          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+    function toggleEstado(id, button) {
+      fetch(`/pacientes/${id}/toggle-estado`, {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+        button.textContent = data.estado;
+        if (data.estado === 'Activo') {
+          button.classList.remove('btn-secondary');
+          button.classList.add('btn-success');
+          mostrarToast('Paciente activado correctamente.', 'bg-success', 'text-white');
+        } else {
+          button.classList.remove('btn-success');
+          button.classList.add('btn-secondary');
+          mostrarToast('Paciente desactivado correctamente.', 'bg-secondary', 'text-white');
         }
+      })
+      .catch(error => {
+        console.error('Error al cambiar el estado:', error);
+        mostrarToast('Error al cambiar el estado.', 'bg-warning', 'text-dark');
       });
-    });
+    }
+
+    function mostrarToast(mensaje, fondo, texto) {
+      const toast = document.getElementById('estadoToast');
+      const body = document.getElementById('toastBody');
+      toast.className = `toast ${fondo} ${texto}`;
+      body.textContent = mensaje;
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+    }
