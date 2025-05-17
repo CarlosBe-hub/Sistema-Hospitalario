@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-
+const methodOverride = require('method-override');
 // Importar Sequelize y modelos
 const { sequelize } = require('./models'); 
 // Importar rutas
@@ -14,6 +14,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 require('./middlewares/core')(app);
+app.use(methodOverride('_method'));
 
 // Rutas
 app.use(pacientesRoutes); 
@@ -24,15 +25,3 @@ app.get('/', (req, res) => {
 // Middleware de prueba
 app.use(require('./middlewares/notFound'));
 
-
-// Sincronizar modelos Sequelize
-sequelize.sync({ alter: true }) // usar { force: true } para forzar el borrado y creación
-  .then(() => {
-    console.log('Tablas sincronizadas correctamente');
-    app.listen(3000, () => {
-      console.log("Servidor iniciado en http://localhost:3000");
-    });
-  })
-  .catch(err => {
-    console.error('Error al sincronizar modelos con la base de datos:', err);
-  });

@@ -1,31 +1,46 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
-const Paciente = require('./PacienteModel');
-const Enfermero = require('./EnfermeroModel');
 const Internacion = require('./InternacionModel');
+const Enfermero = require('./EnfermeroModel');
 
-class CuidadosEnfermeria extends Model {}
+class SignosVitales extends Model {}
 
-CuidadosEnfermeria.init({
-  id_cuidados: {
+SignosVitales.init({
+  id_signos: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  fecha: {
+  fecha_hora: {
     type: DataTypes.DATE,
     allowNull: false
+  },
+  temperatura: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  frecuencia_cardiaca: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  presion_arterial: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  frecuencia_respiratoria: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   },
   observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  id_paciente: {
+  id_internacion: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Paciente,
-      key: 'id_paciente'
+      model: Internacion,
+      key: 'id_internacion'
     },
     onDelete: 'CASCADE'
   },
@@ -37,21 +52,12 @@ CuidadosEnfermeria.init({
       key: 'id_enfermero'
     },
     onDelete: 'CASCADE'
-  },
-  id_internacion: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: Internacion,
-      key: 'id_internacion'
-    },
-    onDelete: 'SET NULL'
   }
 }, {
   sequelize,
-  modelName: 'CuidadosEnfermeria',
-  tableName: 'cuidados_enfermeria',
+  modelName: 'SignosVitales',
+  tableName: 'signos_vitales',
   timestamps: false
 });
 
-module.exports = CuidadosEnfermeria;
+module.exports = SignosVitales;

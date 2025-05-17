@@ -1,58 +1,48 @@
 extends layout
 
 block content
-  h2 Lista de Pacientes
+  h2 Pacientes Inactivos
 
-  a.btn.btn-success.mb-3(href="/admision") + Nuevo Paciente
+  a.btn.btn-primary.mb-3(href="/pacientes") Volver a Lista de Activos
 
-  table#tablaPacientes.table.table-striped
+  table#tablaInactivos.table.table-striped
     thead
       tr
         th N° Paciente
         th Nombre
         th Apellido
         th DNI
-        th Edad
         th Fecha Nac.
-        th Género
-        th Teléfono
         th Estado
         th Acciones
     tbody
 
-  // Estilos y scripts necesarios
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
 
   script.
     $(document).ready(function () {
-      $('#tablaPacientes').DataTable({
-        ajax: '/api/pacientes',
+      $('#tablaInactivos').DataTable({
+        ajax: '/api/pacientes/inactivos',
         columns: [
           { data: 'id_paciente' },
           { data: 'nombre' },
           { data: 'apellido' },
           { data: 'dni' },
-          { data: 'edad' },
           { data: 'fecha_nacimiento' },
-          { data: 'genero' },
-          { data: 'telefono' },
           {
             data: 'estado',
             render: function (estado) {
-              return estado === 'Activo'
-                ? '<span class="badge bg-success">Activo</span>'
-                : '<span class="badge bg-danger">Inactivo</span>';
+              return '<span class="badge bg-danger">Inactivo</span>';
             }
           },
           {
             data: 'id_paciente',
             render: function (id) {
               return `
-                <a href="/pacientes/${id}/editar" class="btn btn-sm btn-warning me-1">Editar</a>
-                <form method="POST" action="/pacientes/${id}?_method=DELETE" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este paciente?')">Eliminar</button>
+                <form method="POST" action="/pacientes/${id}/restaurar" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success">Restaurar</button>
                 </form>
               `;
             },
@@ -61,7 +51,7 @@ block content
           }
         ],
         language: {
-          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+          url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         }
       });
     });

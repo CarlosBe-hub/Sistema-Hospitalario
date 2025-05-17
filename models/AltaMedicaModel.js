@@ -1,5 +1,6 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const Internacion = require('./InternacionModel');
 
 class AltaMedica extends Model {}
 
@@ -9,22 +10,31 @@ AltaMedica.init({
     primaryKey: true,
     autoIncrement: true
   },
-  Estado: {
-    type: DataTypes.STRING,
+  fecha_salida: {
+    type: DataTypes.DATE,
     allowNull: false
   },
-  Fecha_Salida: {
-    type: DataTypes.DATE, 
+  estado: {
+    type: DataTypes.STRING,
     allowNull: false
   },
   instrucciones_cuidados: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  id_internacion: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Internacion,
+      key: 'id_internacion'
+    },
+    onDelete: 'CASCADE'
   }
 }, {
   sequelize,
   modelName: 'AltaMedica',
-  tableName: 'AltaMedica',
+  tableName: 'alta_medica',
   timestamps: false
 });
 

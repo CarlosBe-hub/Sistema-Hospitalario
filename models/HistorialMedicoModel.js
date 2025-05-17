@@ -1,5 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const Paciente = require('./PacienteModel');
+const Medico = require('./MedicoModel');
 
 class HistorialMedico extends Model {}
 
@@ -9,19 +11,19 @@ HistorialMedico.init({
     primaryKey: true,
     autoIncrement: true
   },
-  Fecha: {
+  fecha: {
     type: DataTypes.DATE,
     allowNull: false
   },
-  Diagnostico: {
+  diagnostico: {
     type: DataTypes.TEXT,
     allowNull: false
   },
-  Medico_Acargo: {
+  medico_acargo: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  Cuidados: {
+  cuidados: {
     type: DataTypes.TEXT,
     allowNull: true
   },
@@ -31,16 +33,26 @@ HistorialMedico.init({
   },
   id_medico: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: Medico,
+      key: 'id_medico'
+    },
+    onDelete: 'CASCADE'
   },
   id_paciente: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: Paciente,
+      key: 'id_paciente'
+    },
+    onDelete: 'CASCADE'
   }
 }, {
   sequelize,
   modelName: 'HistorialMedico',
-  tableName: 'HistorialMedico',
+  tableName: 'historialmedico',
   timestamps: false
 });
 

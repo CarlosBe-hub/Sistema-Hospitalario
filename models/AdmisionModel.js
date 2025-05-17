@@ -1,7 +1,8 @@
 const { Model, DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Ajustá la ruta si es distinta
+const sequelize = require('../config/db');
 const Paciente = require('./PacienteModel');
 const Internacion = require('./InternacionModel');
+const Habitacion = require('./HabitacionModel');
 
 class Admision extends Model {}
 
@@ -29,6 +30,15 @@ Admision.init({
     },
     onDelete: 'CASCADE'
   },
+  id_habitacion: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Habitacion,
+      key: 'id_habitacion'
+    },
+    onDelete: 'CASCADE'
+  },
   fecha_admision: {
     type: DataTypes.DATE,
     allowNull: false
@@ -39,10 +49,6 @@ Admision.init({
   },
   estado: {
     type: DataTypes.STRING,
-    allowNull: false
-  },
-  id_habitacion: {
-    type: DataTypes.INTEGER,
     allowNull: false
   }
 }, {

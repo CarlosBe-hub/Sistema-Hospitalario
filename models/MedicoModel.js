@@ -9,10 +9,28 @@ Medico.init({
     primaryKey: true,
     autoIncrement: true
   },
-  nombre: DataTypes.STRING,
-  apellido: DataTypes.STRING,
-  nro_matricula: DataTypes.STRING,
-  especializacion: DataTypes.STRING
+  nombre: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  apellido: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  nro_matricula: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  especializacion: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  estado: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Activo' // o 'Inactivo'
+  }
 }, {
   sequelize,
   modelName: 'Medico',

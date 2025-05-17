@@ -12,7 +12,14 @@ Habitacion.init({
   camas: DataTypes.INTEGER,
   genero: DataTypes.STRING,
   estado: DataTypes.STRING,
-  ala: DataTypes.STRING
+  id_ala: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'ala',
+      key: 'id_ala'
+    }
+  }
 }, {
   sequelize,
   modelName: 'Habitacion',

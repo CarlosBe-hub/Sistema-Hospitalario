@@ -2,6 +2,7 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 const Habitacion = require('./HabitacionModel');
 const Paciente = require('./PacienteModel');
+const MotivoInternacion = require('./MotivoInternacionModel');
 
 class Internacion extends Model {}
 
@@ -11,12 +12,28 @@ Internacion.init({
     primaryKey: true,
     autoIncrement: true
   },
-  fecha_ingreso: DataTypes.DATE,
-  fecha_salida: DataTypes.DATE,
-  diagnostico: DataTypes.STRING,
-  estado: DataTypes.STRING,
+  fecha_ingreso: {
+    type: DataTypes.DATE,
+    allowNull: false
+  },
+  fecha_salida: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  diagnostico: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  estado: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['Activa', 'Finalizada', 'Cancelada']] 
+    }
+  },
   id_habitacion: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     references: {
       model: Habitacion,
       key: 'id_habitacion'
@@ -25,11 +42,21 @@ Internacion.init({
   },
   id_paciente: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     references: {
       model: Paciente,
       key: 'id_paciente'
     },
     onDelete: 'CASCADE'
+  },
+  id_motivo: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: MotivoInternacion,
+      key: 'id_motivo'
+    },
+    onDelete: 'SET NULL'
   }
 }, {
   sequelize,
