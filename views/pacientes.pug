@@ -1,16 +1,28 @@
 extends layout
 
 block content
-  h2 Lista de Pacientes
+  .d-flex.justify-content-between.align-items-center.mb-3
+    h2.mb-0 Listado y Gestión de Pacientes
 
-  // Botón para abrir el modal
-  button.btn.btn-success.mb-3(data-bs-toggle="modal", data-bs-target="#nuevoPacienteModal") + Nuevo Paciente
+  .d-flex.gap-3.mb-4
+    .card.text-center(style="min-width: 150px;")
+      .card-body
+        h5.card-title Total Pacientes
+        p.card-text#totalPacientes 0
 
-  // Tabla de pacientes
-  table.table.table-striped
+    .card.text-center(style="min-width: 150px;")
+      .card-body
+        h5.card-title Femenino
+        p.card-text.text-danger#totalFemenino 0
+
+    .card.text-center(style="min-width: 150px;")
+      .card-body
+        h5.card-title Masculino
+        p.card-text.text-primary#totalMasculino 0
+
+  table#tablaPacientes.table.table-striped
     thead
       tr
-        th N° Paciente
         th Nombre
         th Apellido
         th DNI
@@ -28,7 +40,6 @@ block content
     tbody
       each paciente in pacientes
         tr
-          td= paciente.id_paciente
           td= paciente.nombre
           td= paciente.apellido
           td= paciente.dni
@@ -38,7 +49,7 @@ block content
           td= paciente.telefono
           td= paciente.altura
           td= paciente.peso
-          td= paciente.prepaga
+          td= paciente.obraSocial ? paciente.obraSocial.nombre : 'No Posee'
           td= paciente.contacto_emergencia
           td= paciente.direccion
           td
@@ -48,37 +59,40 @@ block content
             )= paciente.estado
           td
             a.btn.btn-warning.btn-sm(href=`/pacientes/${paciente.id_paciente}/editar`) Editar
-            form(method="POST", action=`/pacientes/${paciente.id_paciente}?_method=DELETE`, style="display:inline")
-              button.btn.btn-danger.btn-sm(type="submit", onclick="return confirm('¿Eliminar este paciente?')") Eliminar
 
-  // Modal de nuevo paciente
   .modal.fade#nuevoPacienteModal(tabindex="-1", aria-labelledby="nuevoPacienteModalLabel", aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
           h5.modal-title#nuevoPacienteModalLabel Nuevo Paciente
           button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
+
         form(method="POST", action="/pacientes")
           .modal-body
             .mb-3
               label.form-label(for="nombre") Nombre
               input.form-control(type="text", name="nombre", required)
+              small.text-danger.d-none#error-nombre Este campo es obligatorio.
 
             .mb-3
               label.form-label(for="apellido") Apellido
               input.form-control(type="text", name="apellido", required)
+              small.text-danger.d-none#error-apellido Este campo es obligatorio.
 
             .mb-3
               label.form-label(for="dni") DNI
               input.form-control(type="text", name="dni", required)
+              small.text-danger.d-none#error-dni El DNI es obligatorio y debe ser numérico.
 
             .mb-3
               label.form-label(for="edad") Edad
               input.form-control(type="number", name="edad", required)
+              small.text-danger.d-none#error-edad Edad debe ser un número entre 0 y 120.
 
             .mb-3
               label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
               input.form-control(type="date", name="fecha_nacimiento", required)
+              small.text-danger.d-none#error-fecha_nacimiento Este campo es obligatorio.
 
             .mb-3
               label.form-label(for="genero") Género
@@ -87,22 +101,31 @@ block content
                 option(value="Masculino") Masculino
                 option(value="Femenino") Femenino
                 option(value="Otro") Otro
+              small.text-danger.d-none#error-genero Selecciona un género.
 
             .mb-3
               label.form-label(for="telefono") Teléfono
               input.form-control(type="text", name="telefono")
+              small.text-danger.d-none#error-telefono Teléfono inválido.
 
             .mb-3
               label.form-label(for="altura") Altura (cm)
               input.form-control(type="number", name="altura", step="0.01")
+              small.text-danger.d-none#error-altura Altura debe ser un número válido.
 
             .mb-3
               label.form-label(for="peso") Peso (kg)
               input.form-control(type="number", name="peso", step="0.01")
+              small.text-danger.d-none#error-peso Peso debe ser un número válido.
 
             .mb-3
-              label.form-label(for="prepaga") Obra Social
-              input.form-control(type="text", name="prepaga")
+              label.form-label(for="id_obra_social") Obra Social
+              select(name="id_obra_social", required)
+                option(disabled selected value="") Seleccione una obra social
+                option(value="null") No posee seguro médico 
+                each obra in obrasSociales
+                  option(value=obra.id_obra_social)= obra.nombre
+              small.text-danger.d-none#error-id_obra_social Este campo es obligatorio.
 
             .mb-3
               label.form-label(for="contacto_emergencia") Contacto de Emergencia
@@ -122,8 +145,7 @@ block content
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
             button.btn.btn-primary(type="submit") Guardar
 
-  // Contenedor para Toast
-  #toastContainer(position="fixed", class="bottom-0 end-0 p-3", style="z-index: 9999")
+  #toastContainer.position-fixed.bottom-0.end-0.p-3(style="z-index: 9999")
     .toast#estadoToast(role="alert", aria-live="assertive", aria-atomic="true")
       .toast-header
         strong.me-auto Sistema
@@ -131,29 +153,49 @@ block content
         button.btn-close(type="button", data-bs-dismiss="toast", aria-label="Cerrar")
       .toast-body#toastBody Estado actualizado correctamente.
 
-  // Script para alternar estado y mostrar Toast con color
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  script(src="https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json")
+  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
+
+  script.
+    $(document).ready(function() {
+      const table = $('#tablaPacientes').DataTable({
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        responsive: true,
+        initComplete: function () {
+          const button = `
+            <button class="btn btn-success me-2 mb-2" data-bs-toggle="modal" data-bs-target="#nuevoPacienteModal">
+              <i class="fas fa-plus-circle me-1"></i> + Agregar Paciente
+            </button>
+          `;
+          $('#tablaPacientes_length').prepend(button);
+        }
+      });
+    });
+
   script.
     function toggleEstado(id, button) {
-      fetch(`/pacientes/${id}/toggle-estado`, {
-        method: 'POST'
-      })
-      .then(response => response.json())
-      .then(data => {
-        button.textContent = data.estado;
-        if (data.estado === 'Activo') {
-          button.classList.remove('btn-secondary');
-          button.classList.add('btn-success');
-          mostrarToast('Paciente activado correctamente.', 'bg-success', 'text-white');
-        } else {
-          button.classList.remove('btn-success');
-          button.classList.add('btn-secondary');
-          mostrarToast('Paciente desactivado correctamente.', 'bg-secondary', 'text-white');
-        }
-      })
-      .catch(error => {
-        console.error('Error al cambiar el estado:', error);
-        mostrarToast('Error al cambiar el estado.', 'bg-warning', 'text-dark');
-      });
+      fetch(`/pacientes/${id}/toggle-estado`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          button.textContent = data.estado;
+          if (data.estado === 'Activo') {
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-success');
+            mostrarToast('Paciente activado correctamente.', 'bg-success', 'text-white');
+          } else {
+            button.classList.remove('btn-success');
+            button.classList.add('btn-secondary');
+            mostrarToast('Paciente desactivado correctamente.', 'bg-secondary', 'text-white');
+          }
+        })
+        .catch(error => {
+          console.error('Error al cambiar el estado:', error);
+          mostrarToast('Error al cambiar el estado.', 'bg-warning', 'text-dark');
+        });
     }
 
     function mostrarToast(mensaje, fondo, texto) {
@@ -164,3 +206,79 @@ block content
       const bsToast = new bootstrap.Toast(toast);
       bsToast.show();
     }
+
+    function actualizarContadores() {
+      const pacientes = !{JSON.stringify(pacientes)};
+      const total = pacientes.length;
+      const femenino = pacientes.filter(p => p.genero === 'Femenino').length;
+      const masculino = pacientes.filter(p => p.genero === 'Masculino').length;
+
+      document.getElementById('totalPacientes').textContent = total;
+      document.getElementById('totalFemenino').textContent = femenino;
+      document.getElementById('totalMasculino').textContent = masculino;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      actualizarContadores();
+
+      const form = document.querySelector('form[action="/pacientes"]');
+      const fields = {
+        nombre: { required: true },
+        apellido: { required: true },
+        dni: { required: true, pattern: /^\d{7,9}$/, message: 'El DNI debe tener entre 7 y 9 dígitos numéricos.' },
+        edad: { required: true, pattern: /^\d+$/, range: [0, 120], message: 'Edad debe ser un número entre 0 y 120.' },
+        fecha_nacimiento: { required: true },
+        genero: { required: true },
+        telefono: { required: false, pattern: /^[\d\s\-+()]{7,20}$/, message: 'Teléfono inválido.' },
+        altura: { required: false, pattern: /^\d+(\.\d{1,2})?$/, message: 'Altura debe ser un número válido.' },
+        peso: { required: false, pattern: /^\d+(\.\d{1,2})?$/, message: 'Peso debe ser un número válido.' },
+        id_obra_social: { required: true }
+      };
+
+      form.addEventListener('submit', function (e) {
+        let valid = true;
+
+        Object.entries(fields).forEach(([field, rules]) => {
+          const input = form.elements[field];
+          const error = document.getElementById('error-' + field);
+
+          if (!input || !error) return;
+
+          let value = input.value.trim();
+          let fieldValid = true;
+          let errorMessage = '';
+
+          if (rules.required && (!value || value === 'null' || value === '')) {
+            fieldValid = false;
+            errorMessage = 'Este campo es obligatorio.';
+          }
+
+          if (fieldValid && rules.pattern && !rules.pattern.test(value)) {
+            fieldValid = false;
+            errorMessage = rules.message || 'Formato inválido.';
+          }
+
+          if (fieldValid && rules.range) {
+            const num = parseInt(value);
+            if (isNaN(num) || num < rules.range[0] || num > rules.range[1]) {
+              fieldValid = false;
+              errorMessage = rules.message || `Valor debe estar entre ${rules.range[0]} y ${rules.range[1]}.`;
+            }
+          }
+
+          if (!fieldValid) {
+            error.textContent = errorMessage;
+            error.classList.remove('d-none');
+            input.classList.add('is-invalid');
+            valid = false;
+          } else {
+            error.classList.add('d-none');
+            input.classList.remove('is-invalid');
+          }
+        });
+
+        if (!valid) {
+          e.preventDefault();
+        }
+      });
+    });

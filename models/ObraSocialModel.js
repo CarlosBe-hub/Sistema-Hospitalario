@@ -4,7 +4,7 @@ const sequelize = require('../config/db');
 class ObraSocial extends Model {}
 
 ObraSocial.init({
-  id_obrasocial: {
+  id_obra_social: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
@@ -13,7 +13,7 @@ ObraSocial.init({
 }, {
   sequelize,
   modelName: 'ObraSocial',
-  tableName: 'obra_social',
+  tableName: 'obras_sociales',
   timestamps: false
 });
 

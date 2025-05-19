@@ -4,55 +4,96 @@ html
     meta(charset="utf-8")
     meta(name="viewport", content="width=device-width, initial-scale=1")
     title Sistema Hospitalario
+    // Bootstrap CSS
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
+    // Bootstrap Icons
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css")
+
     style.
       body {
-        display: flex;
-        min-height: 100vh;
         margin: 0;
       }
       .sidebar {
         width: 250px;
-        background-color:rgb(14, 76, 138);
-        padding: 1rem;
+        background-color: rgb(23, 102, 180);
+        min-height: 100vh;
+        padding: 1.5rem 1rem;
+        position: fixed;
+        top: 0;
+        left: 0;
+        overflow-y: auto;
       }
       .sidebar a {
-        color: #ffffff;
-        display: block;
-        margin-bottom: 10px;
+        color: #fff;
         text-decoration: none;
+        padding: 0.5rem 1rem;
+        display: block;
+        border-radius: 0.3rem;
+        transition: background 0.2s;
       }
-      .sidebar a:hover {
-        text-decoration: underline;
+      .sidebar a:hover,
+      .sidebar .dropdown-menu a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
       }
       .sidebar .dropdown-menu {
-        background-color: #495057;
+        background-color: #0f3e70;
+        border: none;
       }
       .content {
-        flex-grow: 1;
+        margin-left: 250px;
         padding: 2rem;
       }
+
   body
     .sidebar
-      h4.text-white Sistema HIS
-      a(href='/') Inicio
-      a(href='/admision') Admisión
-      a(href='/pacientes') Pacientes
-      a(href='/habitaciones') Habitaciones
-      a(href='/enfermeria') Enfermería
-      a(href='/evaluacion-medica') Evaluación Médica
+      div.d-flex.align-items-center.mb-4
+        img(src="/img/iconhospital.jpg", alt="Logo", width="50", height="45", class="me-2")
+        h4.text-white.mb-0 Sistema HIS
 
-      .dropdown
-        a.btn.btn-secondary.dropdown-toggle(href='#', role='button', data-bs-toggle='dropdown') Datos Paciente...
+      a(href='/')
+        i.bi.bi-house-door.me-2
+        | Inicio
+
+      a(href='/admision')
+        i.bi.bi-journal-plus.me-2
+        | Admisión
+
+      a(href='/pacientes')
+        i.bi.bi-people-fill.me-2
+        | Pacientes
+
+      a(href='/habitaciones')
+        i.bi.bi-door-closed-fill.me-2
+        | Habitaciones
+
+      a(href='/enfermeria')
+        i.bi.bi-clipboard-pulse.me-2
+        | Enfermería
+
+      a(href='/evaluacion-medica')
+        i.bi.bi-stethoscope.me-2
+        | Evaluación Médica
+
+      .dropdown.mt-3
+        button.btn.btn-outline-light.dropdown-toggle(type='button', data-bs-toggle='dropdown')
+          i.bi.bi-person-vcard.me-2
+          | Datos Paciente
         ul.dropdown-menu
           li
-            a.dropdown-item(href='/alta-medica') Alta médica
+            a.dropdown-item(href='/alta-medica')
+              i.bi.bi-arrow-up-square.me-2
+              | Alta médica
           li
-            a.dropdown-item(href='/historial-medico') Historial médico
+            a.dropdown-item(href='/historial-medico')
+              i.bi.bi-clock-history.me-2
+              | Historial médico
           li
-            a.dropdown-item(href='/cuidados-enfermeria') Cuidados enfermería
+            a.dropdown-item(href='/cuidados-enfermeria')
+              i.bi.bi-heart-pulse.me-2
+              | Cuidados enfermería
 
     .content
       block content
 
+    // Bootstrap JS (para dropdown)
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
