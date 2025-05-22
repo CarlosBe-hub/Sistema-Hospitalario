@@ -10,6 +10,7 @@ router.get('/pacientes', pacienteController.verActivos);
 
 // API: obtener todos los pacientes
 router.get('/api/pacientes', pacienteController.obtenerTodosPacientes);
+router.get('/pacientes/buscar', pacienteController.buscarPacientePorDNI);
 
 
 // Editar paciente
@@ -19,5 +20,6 @@ router.post('/pacientes/:id/editar', pacienteController.actualizarPaciente);
 
 // Cambiar estado
 router.post('/pacientes/:id/toggle-estado', pacienteController.toggleEstado);
+
 
 module.exports = router;

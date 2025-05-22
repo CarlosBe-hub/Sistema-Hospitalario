@@ -1,40 +1,139 @@
 extends layout
 
 block content
-  h2 Nueva Admisión
+  h1 Gestión de Admisiones
 
-  form(action="/admision" method="POST")
-    .mb-3
-      label(for="id_paciente") Paciente
-      select.form-select(name="id_paciente" required)
-        option(value="") -- Selecciona un paciente --
-        each paciente in pacientes
-          option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido
+  // Botón para abrir el modal
+  button.btn.btn-primary.mb-3(data-bs-toggle="modal", data-bs-target="#modalAdmision") + Registrar Nueva Admisión
 
-    .mb-3
-      label(for="fecha_admision") Fecha de Admisión
-      input.form-control(type="datetime-local" name="fecha_admision" required)
+  // Tabla de admisiones
+  table#tabla-admisiones.table.table-striped
+    thead
+      tr
+        th ID
+        th Paciente
+        th Fecha Admisión
+        th Tipo Ingreso
+        th Estado
+        th Acciones
+    tbody
+      each admision in admisiones
+        tr
+          td= admision.id_admision
+          td= admision.paciente.nombre + ' ' + admision.paciente.apellido
+          td= admision.fecha_admision.toLocaleString()
+          td= admision.tipo_ingreso
+          td= admision.estado
+          td
+            a(href="/internacion/nueva/" + admision.id_admision, class="btn btn-success btn-sm me-1") Internar
+            a(href="/admision/editar/" + admision.id_admision, class="btn btn-warning btn-sm me-1") Editar
+            form(method="POST", action="/admision/baja/" + admision.id_admision, style="display:inline")
+              button(type="submit", class="btn btn-danger btn-sm") Dar de Baja
 
-    .mb-3
-      label(for="diagnostico") Diagnóstico inicial
-      textarea.form-control(name="diagnostico" required)
+  // Modal Bootstrap para nueva admisión
+  .modal.fade#modalAdmision(tabindex="-1", aria-labelledby="modalAdmisionLabel", aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title#modalAdmisionLabel Nueva Admisión de Paciente
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Close")
+        form(method="POST", action="/admision/guardar")
+          .modal-body
+            .mb-3
+              label.form-label(for="id_paciente") Paciente
+              select.form-select(name="id_paciente", required)
+                option(value="") -- Selecciona un paciente --
+                each paciente in pacientes
+                  option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido
 
-    .mb-3
-      label(for="estado") Estado del paciente
-      select.form-select(name="estado" required)
-        option(value="Estable") Estable
-        option(value="Grave") Grave
-        option(value="Crítico") Crítico
+            .mb-3
+              label.form-label(for="fecha_admision") Fecha de Admisión
+              input.form-control(type="datetime-local", name="fecha_admision", required)
 
-    .mb-3
-      label(for="id_habitacion") Habitación
-      select.form-select(name="id_habitacion" required)
-        option(value="") -- Selecciona habitación --
-        each hab in habitaciones
-          option(value=hab.id_habitacion)= 'Hab. ' + hab.id_habitacion
+            .mb-3
+              label.form-label(for="tipo_ingreso") Tipo de Ingreso
+              input.form-control(type="text", name="tipo_ingreso", placeholder="Ej: Urgencia, Programado")
 
-    // Si todavía no hay internación creada, podés hacer esto temporalmente:
-    input(type="hidden" name="id_internacion" value="1")
+            .mb-3
+              label.form-label(for="estado") Estado
+              select.form-select(name="estado", required)
+                option(value="activo") Activo
+                option(value="finalizado") Finalizado
 
-    button.btn.btn-success(type="submit") Admitir Paciente
-    a.btn.btn-secondary(href="/") Cancelar
+          .modal-footer
+            button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
+            button.btn.btn-primary(type="submit") Guardar Admisión
+
+  // CSS de Bootstrap y DataTables
+  link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
+  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css")
+
+  // JS de Bootstrap y DataTables
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
+  script(src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js")
+  script.
+    $(document).ready(function() {
+      $('#tabla-admisiones').DataTable({
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
+        }
+      });
+    });
+
+  // Modal editar admisión
+  .modal.fade#modalEditarAdmision(tabindex="-1", aria-labelledby="modalEditarLabel", aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title#modalEditarLabel Editar Admisión
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Close")
+        form(method="POST", action="/admision/editar", id="formEditarAdmision")
+          .modal-body
+            input(type="hidden", name="id_admision", id="edit_id_admision")
+
+            .mb-3
+              label.form-label(for="edit_id_paciente") Paciente
+              select.form-select(name="id_paciente", id="edit_id_paciente", required)
+                option(value="") -- Selecciona un paciente --
+                each paciente in pacientes
+                  option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido
+
+            .mb-3
+              label.form-label(for="edit_fecha_admision") Fecha de Admisión
+              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision", required)
+
+            .mb-3
+              label.form-label(for="edit_tipo_ingreso") Tipo de Ingreso
+              input.form-control(type="text", name="tipo_ingreso", id="edit_tipo_ingreso")
+
+            .mb-3
+              label.form-label(for="edit_estado") Estado
+              select.form-select(name="estado", id="edit_estado", required)
+                option(value="activo") Activo
+                option(value="finalizado") Finalizado
+                option(value="cancelado") Cancelado
+
+          .modal-footer
+            button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
+            button.btn.btn-primary(type="submit") Guardar Cambios
+
+  // Script para llenar el modal de edición
+  script.
+    const modalEditar = document.getElementById('modalEditarAdmision');
+    modalEditar.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+
+      const id = button.getAttribute('data-id');
+      const id_paciente = button.getAttribute('data-id_paciente');
+      const fecha = button.getAttribute('data-fecha');
+      const tipo = button.getAttribute('data-tipo');
+      const estado = button.getAttribute('data-estado');
+
+      document.getElementById('formEditarAdmision').action = "/admision/editar/" + id;
+      document.getElementById('edit_id_admision').value = id;
+      document.getElementById('edit_id_paciente').value = id_paciente;
+      document.getElementById('edit_fecha_admision').value = fecha;
+      document.getElementById('edit_tipo_ingreso').value = tipo || '';
+      document.getElementById('edit_estado').value = estado;
+    });

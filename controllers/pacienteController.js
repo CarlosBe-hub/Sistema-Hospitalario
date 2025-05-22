@@ -162,11 +162,27 @@ const toggleEstado = async (req, res) => {
   }
 };
 
+
+const buscarPacientePorDNI = async (req, res) => {
+  try {
+    const { dni } = req.query;
+    const paciente = await Paciente.findOne({ where: { dni } });
+
+    if (!paciente) return res.status(404).json({ mensaje: 'No encontrado' });
+
+    res.json(paciente);
+  } catch (error) {
+    console.error('Error buscando paciente:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   verActivos,
   obtenerTodosPacientes,
   mostrarFormularioEditar,
   actualizarPaciente,
   toggleEstado,
-  crearPaciente
+  crearPaciente,
+  buscarPacientePorDNI
 };

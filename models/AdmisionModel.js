@@ -1,8 +1,5 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
-const Paciente = require('./PacienteModel');
-const Internacion = require('./InternacionModel');
-const Habitacion = require('./HabitacionModel');
 
 class Admision extends Model {}
 
@@ -14,38 +11,15 @@ Admision.init({
   },
   id_paciente: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Paciente,
-      key: 'id_paciente'
-    },
-    onDelete: 'CASCADE'
-  },
-  id_internacion: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Internacion,
-      key: 'id_internacion'
-    },
-    onDelete: 'CASCADE'
-  },
-  id_habitacion: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Habitacion,
-      key: 'id_habitacion'
-    },
-    onDelete: 'CASCADE'
+    allowNull: false
   },
   fecha_admision: {
     type: DataTypes.DATE,
     allowNull: false
   },
-  diagnostico: {
+  tipo_ingreso: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   estado: {
     type: DataTypes.STRING,
@@ -57,5 +31,13 @@ Admision.init({
   tableName: 'admision',
   timestamps: false
 });
+
+// Asociación con Paciente
+Admision.associate = (models) => {
+  Admision.belongsTo(models.Paciente, {
+    foreignKey: 'id_paciente',
+    as: 'paciente'
+  });
+};
 
 module.exports = Admision;

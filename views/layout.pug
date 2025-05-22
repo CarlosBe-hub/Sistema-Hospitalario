@@ -4,6 +4,7 @@ html
     meta(charset="utf-8")
     meta(name="viewport", content="width=device-width, initial-scale=1")
     title Sistema Hospitalario
+
     // Bootstrap CSS
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css")
     // Bootstrap Icons
@@ -45,11 +46,13 @@ html
       }
 
   body
+    // Sidebar lateral izquierdo
     .sidebar
       div.d-flex.align-items-center.mb-4
         img(src="/img/iconhospital.jpg", alt="Logo", width="50", height="45", class="me-2")
         h4.text-white.mb-0 Sistema HIS
 
+      // Opciones principales
       a(href='/')
         i.bi.bi-house-door.me-2
         | Inicio
@@ -66,34 +69,38 @@ html
         i.bi.bi-door-closed-fill.me-2
         | Habitaciones
 
-      a(href='/enfermeria')
-        i.bi.bi-clipboard-pulse.me-2
-        | Enfermería
-
-      a(href='/evaluacion-medica')
-        i.bi.bi-stethoscope.me-2
-        | Evaluación Médica
-
+      // Opciones agrupadas
       .dropdown.mt-3
         button.btn.btn-outline-light.dropdown-toggle(type='button', data-bs-toggle='dropdown')
-          i.bi.bi-person-vcard.me-2
-          | Datos Paciente
+          i.bi.bi-grid-3x3-gap.me-2
+          | Módulos
         ul.dropdown-menu
+          li
+            a.dropdown-item(href='/enfermeria')
+              i.bi.bi-clipboard-pulse.me-2
+              | Enfermería
+          li
+            a.dropdown-item(href='/evaluacion-medica')
+              i.bi.bi-stethoscope.me-2
+              | Evaluación Médica
+          li
+            hr.dropdown-divider
           li
             a.dropdown-item(href='/alta-medica')
               i.bi.bi-arrow-up-square.me-2
-              | Alta médica
+              | Alta Médica
           li
             a.dropdown-item(href='/historial-medico')
               i.bi.bi-clock-history.me-2
-              | Historial médico
+              | Historial Médico
           li
             a.dropdown-item(href='/cuidados-enfermeria')
               i.bi.bi-heart-pulse.me-2
-              | Cuidados enfermería
+              | Cuidados Enfermería
 
+    // Contenido principal
     .content
       block content
 
-    // Bootstrap JS (para dropdown)
+    // Bootstrap JS
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")

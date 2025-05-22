@@ -26,7 +26,6 @@ block content
         th Nombre
         th Apellido
         th DNI
-        th Edad
         th Fecha Nac.
         th Género
         th Teléfono
@@ -43,7 +42,6 @@ block content
           td= paciente.nombre
           td= paciente.apellido
           td= paciente.dni
-          td= paciente.edad
           td= paciente.fechaISO ? paciente.fechaISO.substring(0, 10) : ''
           td= paciente.genero
           td= paciente.telefono
@@ -84,7 +82,7 @@ block content
               input.form-control(type="text", name="dni", required)
               small.text-danger.d-none#error-dni El DNI es obligatorio y debe ser numérico.
 
-            .mb-3
+            //.mb-3
               label.form-label(for="edad") Edad
               input.form-control(type="number", name="edad", required)
               small.text-danger.d-none#error-edad Edad debe ser un número entre 0 y 120.

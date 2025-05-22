@@ -1,4 +1,3 @@
-
 const Sequelize = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -39,6 +38,9 @@ HistorialMedico.belongsTo(Paciente, { foreignKey: 'id_paciente' });
 
 Paciente.hasMany(CuidadosEnfermeria, { foreignKey: 'id_paciente' });
 CuidadosEnfermeria.belongsTo(Paciente, { foreignKey: 'id_paciente' });
+
+Paciente.hasMany(Admision, { foreignKey: 'id_paciente' });
+Admision.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'paciente' });
 
 // Internacion
 Internacion.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
