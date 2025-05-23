@@ -246,37 +246,31 @@ block content
           let fieldValid = true;
           let errorMessage = '';
 
-          if (rules.required && (!value || value === 'null' || value === '')) {
+          // Aquí se cambió la validación para id_obra_social
+          if (rules.required && (!value || value === '')) {
             fieldValid = false;
             errorMessage = 'Este campo es obligatorio.';
-          }
-
-          if (fieldValid && rules.pattern && !rules.pattern.test(value)) {
+          } else if (rules.pattern && value && !rules.pattern.test(value)) {
             fieldValid = false;
-            errorMessage = rules.message || 'Formato inválido.';
-          }
-
-          if (fieldValid && rules.range) {
-            const num = parseInt(value);
-            if (isNaN(num) || num < rules.range[0] || num > rules.range[1]) {
+            errorMessage = rules.message || 'Valor inválido.';
+          } else if (rules.range && value) {
+            const num = Number(value);
+            if (num < rules.range[0] || num > rules.range[1]) {
               fieldValid = false;
-              errorMessage = rules.message || `Valor debe estar entre ${rules.range[0]} y ${rules.range[1]}.`;
+              errorMessage = rules.message || 'Valor fuera de rango.';
             }
           }
 
           if (!fieldValid) {
-            error.textContent = errorMessage;
             error.classList.remove('d-none');
-            input.classList.add('is-invalid');
+            error.textContent = errorMessage;
             valid = false;
           } else {
             error.classList.add('d-none');
-            input.classList.remove('is-invalid');
+            error.textContent = '';
           }
         });
 
-        if (!valid) {
-          e.preventDefault();
-        }
+        if (!valid) e.preventDefault();
       });
     });

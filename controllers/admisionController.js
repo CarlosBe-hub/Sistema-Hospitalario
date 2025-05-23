@@ -1,5 +1,5 @@
 const { Paciente, Admision } = require('../models');
-const { Op } = require('sequelize'); // Para operadores avanzados
+const { Op } = require('sequelize');
 
 // Mostrar tabla de admisiones + modal
 exports.vistaListado = async (req, res) => {
@@ -10,7 +10,6 @@ exports.vistaListado = async (req, res) => {
       order: [['fecha_admision', 'DESC']]
     });
 
-    // Para evitar duplicados en frontend al editar
     const admisionesActivasJS = admisiones
       .filter(a => a.estado === 'activo')
       .map(a => ({
@@ -30,12 +29,40 @@ exports.guardarAdmision = async (req, res) => {
   try {
     const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
 
-    const existente = await Admision.findOne({
-      where: { id_paciente, estado: 'activo' }
-    });
+    // Validación campos obligatorios
+    if (!id_paciente || !fecha_admision || !estado) {
+      return res.status(400).send('Todos los campos obligatorios deben estar completos.');
+    }
 
-    if (existente) {
-      return res.status(400).send('Este paciente ya tiene una admisión activa.');
+    // Verificar paciente existente
+    const paciente = await Paciente.findByPk(id_paciente);
+    if (!paciente) {
+      return res.status(400).send('El paciente seleccionado no existe.');
+    }
+
+    // Validar fecha
+    const fecha = new Date(fecha_admision);
+    if (isNaN(fecha.getTime())) {
+      return res.status(400).send('La fecha de admisión no es válida.');
+    }
+    if (fecha > new Date()) {
+      return res.status(400).send('La fecha de admisión no puede ser futura.');
+    }
+
+    // Validar estado
+    const estadosValidos = ['activo', 'finalizado', 'cancelado', 'en proceso...'];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).send('El estado ingresado no es válido.');
+    }
+
+    // Validar duplicado activo
+    if (estado === 'activo') {
+      const existente = await Admision.findOne({
+        where: { id_paciente, estado: 'activo' }
+      });
+      if (existente) {
+        return res.status(400).send('Este paciente ya tiene una admisión activa.');
+      }
     }
 
     await Admision.create({
@@ -52,13 +79,34 @@ exports.guardarAdmision = async (req, res) => {
   }
 };
 
-// Guardar cambios de edición
+// Actualizar admisión existente
 exports.actualizarAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
     const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
 
-    // Validar duplicados si se deja activo
+    if (!id_paciente || !fecha_admision || !estado) {
+      return res.status(400).send('Todos los campos obligatorios deben estar completos.');
+    }
+
+    const paciente = await Paciente.findByPk(id_paciente);
+    if (!paciente) {
+      return res.status(400).send('El paciente seleccionado no existe.');
+    }
+
+    const fecha = new Date(fecha_admision);
+    if (isNaN(fecha.getTime())) {
+      return res.status(400).send('La fecha de admisión no es válida.');
+    }
+    if (fecha > new Date()) {
+      return res.status(400).send('La fecha de admisión no puede ser futura.');
+    }
+
+    const estadosValidos = ['activo', 'finalizado', 'cancelado', 'en proceso...'];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).send('El estado ingresado no es válido.');
+    }
+
     if (estado === 'activo') {
       const existente = await Admision.findOne({
         where: {
@@ -85,7 +133,7 @@ exports.actualizarAdmision = async (req, res) => {
   }
 };
 
-// Dar de baja una admisión (cambiar estado)
+// Dar de baja admisión
 exports.darDeBajaAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
