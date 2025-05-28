@@ -1,0 +1,87 @@
+extends layout
+
+block content
+  .container.mt-4
+    h2.mb-4 Nueva Internación
+
+    form(method="POST", action="/internacion/crear")
+      .mb-3
+        label.form-label(for="id_paciente") Paciente:
+        select.form-select(name="id_paciente", required)
+          option(value="" disabled selected) Seleccionar paciente
+          each paciente in pacientes
+            option(value=paciente.id_paciente)= `${paciente.nombre} ${paciente.apellido}`
+
+      .mb-3
+        label.form-label(for="fecha_ingreso") Fecha de ingreso:
+        input.form-control(type="date", name="fecha_ingreso", required)
+
+      .mb-3
+        label.form-label(for="diagnostico") Motivo Internacion:
+        select.form-select(name="diagnostico", required)
+          option(value="" disabled selected) Seleccionar diagnóstico
+          each diag in diagnosticos
+            option(value=diag)= diag
+
+      .mb-3
+        label.form-label(for="id_ala") Ala:
+        select.form-select#ala-select(name="id_ala", required)
+          option(value="" disabled selected) Seleccionar ala
+          each ala in alas
+            option(value=ala.id_ala)= ala.nombre
+
+      .mb-3
+        label.form-label(for="id_habitacion") Habitación:
+        select.form-select#habitacion-select(name="id_habitacion", required disabled)
+          option(value="" disabled selected) Seleccionar habitación
+
+      .mb-3
+        label.form-label(for="id_cama") Cama:
+        select.form-select#cama-select(name="id_cama", required disabled)
+          option(value="" disabled selected) Seleccionar cama
+
+      .mb-3
+        label.form-label(for="id_motivo") Detalles de Internacion (opcional):
+        input.form-control(type="text", name="id_motivo")
+
+      button.btn.btn-primary(type="submit") Internar Paciente
+
+    //- Scripts dinámicos
+    script.
+      const habitaciones = !{JSON.stringify(habitaciones)};
+      const camas = !{JSON.stringify(camas)};
+      console.log('Habitaciones:', habitaciones);
+      console.log('Camas:', camas);
+
+      document.getElementById('ala-select').addEventListener('change', function () {
+        const alaId = this.value;
+        const habSelect = document.getElementById('habitacion-select');
+        habSelect.innerHTML = '<option disabled selected>Seleccionar habitación</option>';
+        habSelect.disabled = false;
+
+        const filteredHab = habitaciones.filter(h => h.id_ala == alaId);
+        console.log(`Habitaciones filtradas para ala ${alaId}:`, filteredHab);
+
+        filteredHab.forEach(h => {
+          habSelect.innerHTML += `<option value="${h.id_habitacion}">Habitación ${h.numero}</option>`;
+        });
+
+        // Reset camas
+        const camaSelect = document.getElementById('cama-select');
+        camaSelect.innerHTML = '<option disabled selected>Seleccionar cama</option>';
+        camaSelect.disabled = true;
+      });
+
+      document.getElementById('habitacion-select').addEventListener('change', function () {
+        const habId = this.value;
+        const camaSelect = document.getElementById('cama-select');
+        camaSelect.innerHTML = '<option disabled selected>Seleccionar cama</option>';
+        camaSelect.disabled = false;
+
+        const filteredCamas = camas.filter(c => c.id_habitacion == habId);
+        console.log(`Camas filtradas para habitación ${habId}:`, filteredCamas);
+
+        filteredCamas.forEach(c => {
+          camaSelect.innerHTML += `<option value="${c.id_cama}">Cama ${c.numero} (${c.estado})</option>`;
+        });
+      });

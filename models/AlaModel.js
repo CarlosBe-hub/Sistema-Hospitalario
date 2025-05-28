@@ -10,7 +10,6 @@ Ala.init({
     autoIncrement: true
   },
   nombre: DataTypes.STRING,
-  ubicacion: DataTypes.STRING
 }, {
   sequelize,
   modelName: 'Ala',

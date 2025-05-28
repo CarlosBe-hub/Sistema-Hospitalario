@@ -1,0 +1,38 @@
+extends layout
+
+block content
+  .container.mt-5
+    h2.text-center.mb-4 Listado de Internaciones
+
+    table#tablaInternaciones.table.table-striped.table-bordered
+      thead
+        tr
+          th Paciente
+          th DNI
+          th Fecha de ingreso
+          th Motivo De Internacion
+          th Estado
+          th Habitación
+      tbody
+        each internacion in internaciones
+          tr
+            td #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+            td #{internacion.Paciente.dni}
+            td #{internacion.fecha_ingreso.toISOString().slice(0, 10)}
+            td #{internacion.diagnostico}
+            td #{internacion.estado}
+            td Habitación #{internacion.Habitacion.numero}
+
+  // CDN de DataTables y jQuery
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
+
+  script.
+    $(document).ready(function() {
+      $('#tablaInternaciones').DataTable({
+        language: {
+          url: 'https//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        }
+      });
+    });

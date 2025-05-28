@@ -1,0 +1,14 @@
+extends layout
+
+block content
+  .container.mt-5
+    h2.text-center.mb-4 Opciones de Internación
+
+    .d-flex.justify-content-center.gap-3
+      a.btn.btn-primary.btn-lg(href='/internacion/nueva')
+        i.bi.bi-plus-circle.me-2
+        | Nueva Internación
+
+      a.btn.btn-success.btn-lg(href='/internacion/listado')
+        i.bi.bi-table.me-2
+        | Listado de Internaciones

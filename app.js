@@ -3,26 +3,31 @@ const path = require('path');
 const app = express();
 const methodOverride = require('method-override');
 // Importar Sequelize y modelos
-const { sequelize } = require('./models'); 
+const { sequelize } = require('./models');
 // Importar rutas
 const pacientesRoutes = require('./routes/pacientes');
 const admisionRoutes = require('./routes/admision');
+const internacionRoutes = require('./routes/internacion');
 
-// Configuración de vistas
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middleware
+// Parsear datos de formularios y JSON
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 require('./middlewares/core')(app);
 app.use(methodOverride('_method'));
 
-// Rutas
-app.use(pacientesRoutes); 
+// Montar rutas con base
+app.use(pacientesRoutes);
 app.use(admisionRoutes);
+app.use('/internacion', internacionRoutes);
+
 app.get('/', (req, res) => {
   res.render('iniciohospital');
 });
-// Middleware de prueba
+
 app.use(require('./middlewares/notFound'));
 
 const PORT = process.env.PORT || 3000;

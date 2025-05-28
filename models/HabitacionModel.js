@@ -9,14 +9,19 @@ Habitacion.init({
     primaryKey: true,
     autoIncrement: true
   },
-  camas: DataTypes.INTEGER,
-  genero: DataTypes.STRING,
-  estado: DataTypes.STRING,
+  numero: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  capacidad: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   id_ala: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'ala',
+      model: 'ala', 
       key: 'id_ala'
     }
   }

@@ -9,12 +9,10 @@ block content
       .card-body
         h5.card-title Total Pacientes
         p.card-text#totalPacientes 0
-
     .card.text-center(style="min-width: 150px;")
       .card-body
         h5.card-title Femenino
         p.card-text.text-danger#totalFemenino 0
-
     .card.text-center(style="min-width: 150px;")
       .card-body
         h5.card-title Masculino
@@ -64,81 +62,63 @@ block content
         .modal-header
           h5.modal-title#nuevoPacienteModalLabel Nuevo Paciente
           button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
-
         form(method="POST", action="/pacientes")
           .modal-body
             .mb-3
               label.form-label(for="nombre") Nombre
               input.form-control(type="text", name="nombre", required)
-              small.text-danger.d-none#error-nombre Este campo es obligatorio.
-
+              small.text-danger.d-none#error-nombre
             .mb-3
               label.form-label(for="apellido") Apellido
               input.form-control(type="text", name="apellido", required)
-              small.text-danger.d-none#error-apellido Este campo es obligatorio.
-
+              small.text-danger.d-none#error-apellido
             .mb-3
               label.form-label(for="dni") DNI
               input.form-control(type="text", name="dni", required)
-              small.text-danger.d-none#error-dni El DNI es obligatorio y debe ser numérico.
-
-            //.mb-3
-              label.form-label(for="edad") Edad
-              input.form-control(type="number", name="edad", required)
-              small.text-danger.d-none#error-edad Edad debe ser un número entre 0 y 120.
-
+              small.text-danger.d-none#error-dni
             .mb-3
               label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
               input.form-control(type="date", name="fecha_nacimiento", required)
-              small.text-danger.d-none#error-fecha_nacimiento Este campo es obligatorio.
-
+              small.text-danger.d-none#error-fecha_nacimiento
             .mb-3
               label.form-label(for="genero") Género
               select.form-select(name="genero", required)
-                option(value="") -- Selecciona --
+                option(value="") Seleccionar
                 option(value="Masculino") Masculino
                 option(value="Femenino") Femenino
                 option(value="Otro") Otro
-              small.text-danger.d-none#error-genero Selecciona un género.
-
+              small.text-danger.d-none#error-genero
             .mb-3
               label.form-label(for="telefono") Teléfono
               input.form-control(type="text", name="telefono")
-              small.text-danger.d-none#error-telefono Teléfono inválido.
-
+              small.text-danger.d-none#error-telefono
             .mb-3
               label.form-label(for="altura") Altura (cm)
-              input.form-control(type="number", name="altura", step="0.01")
-              small.text-danger.d-none#error-altura Altura debe ser un número válido.
-
+              input.form-control(type="number", name="altura", step="0.1")
+              small.text-danger.d-none#error-altura
             .mb-3
               label.form-label(for="peso") Peso (kg)
-              input.form-control(type="number", name="peso", step="0.01")
-              small.text-danger.d-none#error-peso Peso debe ser un número válido.
-
+              input.form-control(type="number", name="peso", step="0.1")
+              small.text-danger.d-none#error-peso
             .mb-3
               label.form-label(for="id_obra_social") Obra Social
-              select(name="id_obra_social", required)
-                option(disabled selected value="") Seleccione una obra social
-                option(value="null") No posee seguro médico 
+              select.form-select(name="id_obra_social", required)
+                option(value="") Seleccionar
+                option(value="null") No posee seguro médico
                 each obra in obrasSociales
                   option(value=obra.id_obra_social)= obra.nombre
-              small.text-danger.d-none#error-id_obra_social Este campo es obligatorio.
-
+              small.text-danger.d-none#error-id_obra_social
             .mb-3
               label.form-label(for="contacto_emergencia") Contacto de Emergencia
               input.form-control(type="text", name="contacto_emergencia")
-
             .mb-3
               label.form-label(for="direccion") Dirección
               input.form-control(type="text", name="direccion")
-
             .mb-3
               label.form-label(for="estado") Estado
               select.form-select(name="estado")
                 option(value="Activo") Activo
                 option(value="Inactivo") Inactivo
-
           .modal-footer
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
             button.btn.btn-primary(type="submit") Guardar
@@ -224,7 +204,6 @@ block content
         nombre: { required: true },
         apellido: { required: true },
         dni: { required: true, pattern: /^\d{7,9}$/, message: 'El DNI debe tener entre 7 y 9 dígitos numéricos.' },
-        edad: { required: true, pattern: /^\d+$/, range: [0, 120], message: 'Edad debe ser un número entre 0 y 120.' },
         fecha_nacimiento: { required: true },
         genero: { required: true },
         telefono: { required: false, pattern: /^[\d\s\-+()]{7,20}$/, message: 'Teléfono inválido.' },
@@ -239,26 +218,17 @@ block content
         Object.entries(fields).forEach(([field, rules]) => {
           const input = form.elements[field];
           const error = document.getElementById('error-' + field);
-
           if (!input || !error) return;
-
           let value = input.value.trim();
           let fieldValid = true;
           let errorMessage = '';
 
-          // Aquí se cambió la validación para id_obra_social
           if (rules.required && (!value || value === '')) {
             fieldValid = false;
             errorMessage = 'Este campo es obligatorio.';
           } else if (rules.pattern && value && !rules.pattern.test(value)) {
             fieldValid = false;
             errorMessage = rules.message || 'Valor inválido.';
-          } else if (rules.range && value) {
-            const num = Number(value);
-            if (num < rules.range[0] || num > rules.range[1]) {
-              fieldValid = false;
-              errorMessage = rules.message || 'Valor fuera de rango.';
-            }
           }
 
           if (!fieldValid) {

@@ -10,7 +10,14 @@ Cama.init({
     primaryKey: true,
     autoIncrement: true
   },
-  numero: DataTypes.STRING,
+  numero: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  estado: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   id_habitacion: {
     type: DataTypes.INTEGER,
     allowNull: false,
