@@ -162,15 +162,25 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-
+// Buscar paciente por DNI (mejorado)
 const buscarPacientePorDNI = async (req, res) => {
   try {
     const { dni } = req.query;
-    const paciente = await Paciente.findOne({ where: { dni } });
+    const paciente = await Paciente.findOne({
+      where: { dni },
+      include: [{ model: ObraSocial, as: 'obraSocial' }]
+    });
 
     if (!paciente) return res.status(404).json({ mensaje: 'No encontrado' });
 
-    res.json(paciente);
+    const edad = calcularEdad(paciente.fecha_nacimiento);
+
+    res.json({
+      ...paciente.dataValues,
+      edad,
+      nombreObraSocial: paciente.obraSocial ? paciente.obraSocial.nombre : '',
+      fechaISO: paciente.fecha_nacimiento ? paciente.fecha_nacimiento.toISOString() : null
+    });
   } catch (error) {
     console.error('Error buscando paciente:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });

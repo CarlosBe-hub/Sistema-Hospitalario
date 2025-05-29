@@ -17,11 +17,15 @@ block content
         input.form-control(type="date", name="fecha_ingreso", required)
 
       .mb-3
-        label.form-label(for="diagnostico") Motivo Internacion:
+        label.form-label(for="diagnostico") Diagnóstico:
         select.form-select(name="diagnostico", required)
           option(value="" disabled selected) Seleccionar diagnóstico
           each diag in diagnosticos
             option(value=diag)= diag
+
+      .mb-3
+        label.form-label(for="motivo_internacion") Detalles del motivo de internación (opcional):
+        textarea.form-control(name="motivo_internacion", rows="3", placeholder="Agregar detalles del motivo de internación")
 
       .mb-3
         label.form-label(for="id_ala") Ala:
@@ -40,13 +44,8 @@ block content
         select.form-select#cama-select(name="id_cama", required disabled)
           option(value="" disabled selected) Seleccionar cama
 
-      .mb-3
-        label.form-label(for="id_motivo") Detalles de Internacion (opcional):
-        input.form-control(type="text", name="id_motivo")
-
       button.btn.btn-primary(type="submit") Internar Paciente
 
-    //- Scripts dinámicos
     script.
       const habitaciones = !{JSON.stringify(habitaciones)};
       const camas = !{JSON.stringify(camas)};
@@ -60,13 +59,10 @@ block content
         habSelect.disabled = false;
 
         const filteredHab = habitaciones.filter(h => h.id_ala == alaId);
-        console.log(`Habitaciones filtradas para ala ${alaId}:`, filteredHab);
-
         filteredHab.forEach(h => {
           habSelect.innerHTML += `<option value="${h.id_habitacion}">Habitación ${h.numero}</option>`;
         });
 
-        // Reset camas
         const camaSelect = document.getElementById('cama-select');
         camaSelect.innerHTML = '<option disabled selected>Seleccionar cama</option>';
         camaSelect.disabled = true;
@@ -79,8 +75,6 @@ block content
         camaSelect.disabled = false;
 
         const filteredCamas = camas.filter(c => c.id_habitacion == habId);
-        console.log(`Camas filtradas para habitación ${habId}:`, filteredCamas);
-
         filteredCamas.forEach(c => {
           camaSelect.innerHTML += `<option value="${c.id_cama}">Cama ${c.numero} (${c.estado})</option>`;
         });

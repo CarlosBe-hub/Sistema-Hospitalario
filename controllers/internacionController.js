@@ -3,13 +3,14 @@ const Paciente = require('../models/PacienteModel');
 const Habitacion = require('../models/HabitacionModel');
 const Cama = require('../models/CamaModel');
 const Ala = require('../models/AlaModel');
+const MotivoInternacion = require('../models/MotivoInternacionModel');
 const { Op } = require('sequelize');
 
 module.exports = {
   async formNuevaInternacion(req, res) {
     try {
       const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
-      const alas = await Ala.findAll(); // Solo nombre
+      const alas = await Ala.findAll();
       const habitaciones = await Habitacion.findAll();
       const camas = await Cama.findAll({
         where: {
@@ -28,12 +29,15 @@ module.exports = {
         'Cirugía programada'
       ];
 
+      const motivos = await MotivoInternacion.findAll();
+
       res.render('internacion', {
         pacientes,
         alas,
         habitaciones,
         camas,
-        diagnosticos
+        diagnosticos,
+        motivos
       });
     } catch (error) {
       console.error(error);
@@ -60,7 +64,6 @@ module.exports = {
         id_motivo: id_motivo || null
       });
 
-      // Cambia a 'Ocupada' la primera cama libre en esa habitación
       await Cama.update(
         { estado: 'Ocupada' },
         {
