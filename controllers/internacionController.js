@@ -12,11 +12,8 @@ module.exports = {
       const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
       const alas = await Ala.findAll();
       const habitaciones = await Habitacion.findAll();
-      const camas = await Cama.findAll({
-        where: {
-          estado: { [Op.in]: ['Libre', 'Higienizada'] }
-        }
-      });
+      const camas = await Cama.findAll();
+      const motivos = await MotivoInternacion.findAll();
 
       const diagnosticos = [
         'Neumonía',
@@ -29,15 +26,13 @@ module.exports = {
         'Cirugía programada'
       ];
 
-      const motivos = await MotivoInternacion.findAll();
-
       res.render('internacion', {
         pacientes,
         alas,
         habitaciones,
         camas,
-        diagnosticos,
-        motivos
+        motivos,
+        diagnosticos
       });
     } catch (error) {
       console.error(error);
@@ -47,14 +42,36 @@ module.exports = {
 
   async crearInternacion(req, res) {
     try {
-      const {
-        id_paciente,
-        fecha_ingreso,
-        diagnostico,
-        id_habitacion,
-        id_motivo
-      } = req.body;
+      const { id_paciente, fecha_ingreso, diagnostico, id_habitacion, id_motivo, id_cama } = req.body;
 
+      const paciente = await Paciente.findByPk(id_paciente);
+
+      // Verificar conflicto de género
+      const internados = await Internacion.findAll({
+        where: {
+          id_habitacion,
+          estado: 'Activa'
+        },
+        include: [{ model: Paciente, attributes: ['genero'] }]
+      });
+
+      const conflictoGenero = internados.some(i => i.Paciente.genero !== paciente.genero);
+      if (conflictoGenero) {
+        return res.status(400).send('No se puede internar un paciente de género diferente en esta habitación.');
+      }
+
+      // Verificar que la cama seleccionada esté disponible
+      const cama = await Cama.findByPk(id_cama);
+
+      if (!cama || cama.id_habitacion != id_habitacion) {
+        return res.status(400).send('La cama seleccionada no pertenece a la habitación elegida.');
+      }
+
+      if (!['Libre', 'Higienizada'].includes(cama.estado)) {
+        return res.status(400).send('La cama seleccionada no está disponible.');
+      }
+
+      // Crear la internación
       await Internacion.create({
         fecha_ingreso,
         diagnostico,
@@ -64,16 +81,8 @@ module.exports = {
         id_motivo: id_motivo || null
       });
 
-      await Cama.update(
-        { estado: 'Ocupada' },
-        {
-          where: {
-            id_habitacion,
-            estado: { [Op.in]: ['Libre', 'Higienizada'] }
-          },
-          limit: 1
-        }
-      );
+      // Cambiar el estado de la cama a "Ocupada"
+      await cama.update({ estado: 'Ocupada' });
 
       res.redirect('/internacion/listado');
     } catch (error) {
@@ -86,8 +95,31 @@ module.exports = {
     try {
       const internaciones = await Internacion.findAll({
         include: [
-          { model: Paciente, attributes: ['nombre', 'apellido', 'dni'] },
-          { model: Habitacion, attributes: ['numero'] }
+          {
+            model: Paciente,
+            as: 'Paciente',
+            attributes: ['nombre', 'apellido', 'dni', 'genero']
+          },
+          {
+            model: Habitacion,
+            attributes: ['numero'],
+            include: [
+              {
+                model: Ala,
+                as: 'ala',
+                attributes: ['nombre']
+              },
+              {
+                model: Cama,
+                attributes: ['numero', 'estado']
+              }
+            ]
+          },
+          {
+            model: MotivoInternacion,
+            as: 'MotivoInternacion',
+            attributes: ['descripcion']
+          }
         ],
         order: [['fecha_ingreso', 'DESC']]
       });

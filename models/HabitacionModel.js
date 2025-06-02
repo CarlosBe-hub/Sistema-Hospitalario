@@ -1,5 +1,6 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const Ala = require('./AlaModel');
 
 class Habitacion extends Model {}
 
@@ -21,7 +22,7 @@ Habitacion.init({
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'ala', 
+      model: 'ala',
       key: 'id_ala'
     }
   }
@@ -30,6 +31,12 @@ Habitacion.init({
   modelName: 'Habitacion',
   tableName: 'habitacion',
   timestamps: false
+});
+
+// Relación: una habitación pertenece a un ala
+Habitacion.belongsTo(Ala, {
+  foreignKey: 'id_ala',
+  as: 'ala'
 });
 
 module.exports = Habitacion;

@@ -28,7 +28,7 @@ Internacion.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      isIn: [['Activa', 'Finalizada', 'Cancelada']] 
+      isIn: [['Activa', 'Finalizada', 'Cancelada']]
     }
   },
   id_habitacion: {
@@ -63,6 +63,22 @@ Internacion.init({
   modelName: 'Internacion',
   tableName: 'internacion',
   timestamps: false
+});
+
+// Relaciones
+Internacion.belongsTo(Habitacion, {
+  foreignKey: 'id_habitacion',
+  as: 'habitacion'
+});
+
+Internacion.belongsTo(Paciente, {
+  foreignKey: 'id_paciente',
+  as: 'paciente'
+});
+
+Internacion.belongsTo(MotivoInternacion, {
+  foreignKey: 'id_motivo',
+  as: 'motivo'
 });
 
 module.exports = Internacion;

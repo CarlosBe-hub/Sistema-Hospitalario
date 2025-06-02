@@ -1,38 +1,72 @@
 extends layout
 
 block content
-  .container.mt-5
-    h2.text-center.mb-4 Listado de Internaciones
+  .container.mt-4
+    h2.mb-4 Listado de Internaciones
 
-    table#tablaInternaciones.table.table-striped.table-bordered
+    table#tablaInternaciones.table.table-bordered
       thead
         tr
           th Paciente
           th DNI
-          th Fecha de ingreso
-          th Motivo De Internacion
-          th Estado
+          th Sexo
+          th Fecha de Ingreso
+          th Diagnóstico
+          th Motivo
           th Habitación
+          th Ala
+          th Estado Cama
       tbody
         each internacion in internaciones
           tr
             td #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
-            td #{internacion.Paciente.dni}
-            td #{internacion.fecha_ingreso.toISOString().slice(0, 10)}
-            td #{internacion.diagnostico}
-            td #{internacion.estado}
-            td Habitación #{internacion.Habitacion.numero}
+            td= internacion.Paciente.dni
+            td= internacion.Paciente.genero
+            td= internacion.fecha_ingreso.toISOString().split('T')[0]
+            td= internacion.diagnostico
 
-  // CDN de DataTables y jQuery
+            - const motivoDesc = internacion.MotivoInternacion && internacion.MotivoInternacion.descripcion ? internacion.MotivoInternacion.descripcion : '-'
+            td= motivoDesc
+
+            - const habitacionNumero = internacion.Habitacion && internacion.Habitacion.numero ? internacion.Habitacion.numero : 'N/D'
+            td= habitacionNumero
+
+            - const alaNombre = internacion.Habitacion && internacion.Habitacion.ala && internacion.Habitacion.ala.nombre ? internacion.Habitacion.ala.nombre : 'N/D'
+            td= alaNombre
+
+            td
+              - let cama = null
+              - if (internacion.Habitacion && internacion.Habitacion.Camas)
+              -   cama = internacion.Habitacion.Camas.find(c => c.estado === 'Ocupada' || c.estado === 'Higienizada' || c.estado === 'Libre')
+              if cama && cama.estado === 'Ocupada'
+                span.text-danger(title=`Cama ${cama.numero}`) 🛏️ Ocupada (Cama #{cama.numero})
+              else if cama && cama.estado === 'Higienizada'
+                span.text-warning(title=`Cama ${cama.numero}`) 🛏️ Higienizada (Cama #{cama.numero})
+              else if cama && cama.estado === 'Libre'
+                span.text-success(title=`Cama ${cama.numero}`) 🛏️ Libre (Cama #{cama.numero})
+              else
+                span.text-muted N/D
+
+    hr
+    h5.mt-4 Leyenda:
+    p
+      span.text-success 🛏️ Libre
+      |  
+      span.text-warning 🛏️ Higienizada
+      |  
+      span.text-danger 🛏️ Ocupada
+
+  //- CDN DataTables
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
 
+  //- Inicialización del DataTable
   script.
-    $(document).ready(function() {
+    $(document).ready(function () {
       $('#tablaInternaciones').DataTable({
         language: {
-          url: 'https//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-        }
+          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        pageLength: 10
       });
-    });

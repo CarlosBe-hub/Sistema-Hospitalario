@@ -46,7 +46,7 @@ Admision.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'paciente' });
 Internacion.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
 Habitacion.hasMany(Internacion, { foreignKey: 'id_habitacion' });
 
-Internacion.belongsTo(MotivoInternacion, { foreignKey: 'id_motivo' });
+Internacion.belongsTo(MotivoInternacion, { foreignKey: 'id_motivo', as: 'MotivoInternacion' });
 MotivoInternacion.hasMany(Internacion, { foreignKey: 'id_motivo' });
 
 Internacion.hasOne(AltaMedica, { foreignKey: 'id_internacion' });
@@ -62,7 +62,7 @@ Internacion.hasMany(SignosVitales, { foreignKey: 'id_internacion' });
 SignosVitales.belongsTo(Internacion, { foreignKey: 'id_internacion' });
 
 // Habitacion
-Habitacion.belongsTo(Ala, { foreignKey: 'id_ala' });
+//Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'ala' });
 Ala.hasMany(Habitacion, { foreignKey: 'id_ala' });
 
 Habitacion.hasMany(Cama, { foreignKey: 'id_habitacion' });

@@ -162,7 +162,7 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-// Buscar paciente por DNI (mejorado)
+// Buscar paciente por DNI 
 const buscarPacientePorDNI = async (req, res) => {
   try {
     const { dni } = req.query;
