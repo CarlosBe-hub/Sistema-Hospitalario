@@ -20,62 +20,55 @@ exports.vistaListado = async (req, res) => {
     res.render('admision', { pacientes, admisiones, admisionesActivasJS });
   } catch (error) {
     console.error('Error al mostrar admisiones:', error);
-    res.status(500).send('Error al cargar las admisiones');
+    res.status(500).json({ error: 'Error al cargar las admisiones' });
   }
 };
 
-// Guardar nueva admisión
+// Guardar nueva admisión (cerrando la anterior si es necesario)
 exports.guardarAdmision = async (req, res) => {
   try {
-    const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
+    const { id_paciente, fecha_admision, tipo_ingreso } = req.body;
 
-    // Validación campos obligatorios
-    if (!id_paciente || !fecha_admision || !estado) {
-      return res.status(400).send('Todos los campos obligatorios deben estar completos.');
+    if (!id_paciente || !fecha_admision || !tipo_ingreso) {
+      return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos.' });
     }
 
-    // Verificar paciente existente
     const paciente = await Paciente.findByPk(id_paciente);
     if (!paciente) {
-      return res.status(400).send('El paciente seleccionado no existe.');
+      return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
     }
 
-    // Validar fecha
     const fecha = new Date(fecha_admision);
     if (isNaN(fecha.getTime())) {
-      return res.status(400).send('La fecha de admisión no es válida.');
+      return res.status(400).json({ error: 'La fecha de admisión no es válida.' });
     }
     if (fecha > new Date()) {
-      return res.status(400).send('La fecha de admisión no puede ser futura.');
+      return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
-    // Validar estado
-    const estadosValidos = ['activo', 'finalizado', 'cancelado', 'en proceso...'];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).send('El estado ingresado no es válido.');
-    }
+    // Buscar si ya existe una admisión activa para ese paciente
+    const admisionActiva = await Admision.findOne({
+      where: { id_paciente, estado: 'activo' }
+    });
 
-    // Validar duplicado activo
-    if (estado === 'activo') {
-      const existente = await Admision.findOne({
-        where: { id_paciente, estado: 'activo' }
+    if (admisionActiva) {
+      return res.status(400).json({
+        error: 'Este paciente ya tiene una admisión activa. El paciente está actualmente internado.'
       });
-      if (existente) {
-        return res.status(400).send('Este paciente ya tiene una admisión activa.');
-      }
     }
 
+    // Crear la nueva admisión
     await Admision.create({
       id_paciente,
       fecha_admision,
       tipo_ingreso,
-      estado
+      estado: 'activo'
     });
 
-    res.redirect('/admision');
+    res.status(200).json({ mensaje: 'Admision registrada correctamente.' });
   } catch (error) {
     console.error('Error al guardar admisión:', error);
-    res.status(500).send('Error al guardar la admisión');
+    res.status(500).json({ error: 'Error al guardar la admisión' });
   }
 };
 
@@ -86,25 +79,25 @@ exports.actualizarAdmision = async (req, res) => {
     const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
 
     if (!id_paciente || !fecha_admision || !estado) {
-      return res.status(400).send('Todos los campos obligatorios deben estar completos.');
+      return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos.' });
     }
 
     const paciente = await Paciente.findByPk(id_paciente);
     if (!paciente) {
-      return res.status(400).send('El paciente seleccionado no existe.');
+      return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
     }
 
     const fecha = new Date(fecha_admision);
     if (isNaN(fecha.getTime())) {
-      return res.status(400).send('La fecha de admisión no es válida.');
+      return res.status(400).json({ error: 'La fecha de admisión no es válida.' });
     }
     if (fecha > new Date()) {
-      return res.status(400).send('La fecha de admisión no puede ser futura.');
+      return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
     const estadosValidos = ['activo', 'finalizado', 'cancelado', 'en proceso...'];
     if (!estadosValidos.includes(estado)) {
-      return res.status(400).send('El estado ingresado no es válido.');
+      return res.status(400).json({ error: 'El estado ingresado no es válido.' });
     }
 
     if (estado === 'activo') {
@@ -117,7 +110,7 @@ exports.actualizarAdmision = async (req, res) => {
       });
 
       if (existente) {
-        return res.status(400).send('Este paciente ya tiene otra admisión activa.');
+        return res.status(400).json({ error: 'Este paciente ya tiene otra admisión activa.' });
       }
     }
 
@@ -126,10 +119,10 @@ exports.actualizarAdmision = async (req, res) => {
       { where: { id_admision } }
     );
 
-    res.redirect('/admision');
+    res.status(200).json({ mensaje: 'Admision actualizada correctamente.' });
   } catch (error) {
     console.error('Error al actualizar admisión:', error);
-    res.status(500).send('Error al actualizar la admisión');
+    res.status(500).json({ error: 'Error al actualizar la admisión' });
   }
 };
 
@@ -143,9 +136,31 @@ exports.darDeBajaAdmision = async (req, res) => {
       { where: { id_admision } }
     );
 
-    res.redirect('/admision');
+    res.status(200).json({ mensaje: 'Admision cancelada correctamente.' });
   } catch (error) {
     console.error('Error al dar de baja la admisión:', error);
-    res.status(500).send('Error al dar de baja la admisión');
+    res.status(500).json({ error: 'Error al dar de baja la admisión' });
+  }
+};
+
+// Buscar paciente por DNI
+exports.buscarPacientePorDNI = async (req, res) => {
+  try {
+    const { dni } = req.params;
+
+    if (!dni || dni.length < 6) {
+      return res.status(400).json({ error: 'DNI inválido' });
+    }
+
+    const paciente = await Paciente.findOne({ where: { dni } });
+
+    if (!paciente) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    res.status(200).json(paciente);
+  } catch (error) {
+    console.error('Error al buscar paciente por DNI:', error);
+    res.status(500).json({ error: 'Error al buscar paciente' });
   }
 };

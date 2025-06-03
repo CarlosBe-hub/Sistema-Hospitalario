@@ -32,7 +32,6 @@ block content
               data-tipo=admision.tipo_ingreso,
               data-estado=admision.estado
             ) Editar
-            
 
   // Modal nueva admisión
   .modal.fade#modalAdmision(tabindex="-1")
@@ -43,35 +42,42 @@ block content
           button.btn-close(type="button", data-bs-dismiss="modal")
         form(action="/admision/guardar", method="POST")
           .modal-body
+            // Contenedor para mostrar mensaje si el paciente tiene admisión activa
+            div#mensajeError.alert.alert-danger(style="display:none")
+              | <strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.
+
+            // Mensaje de búsqueda de paciente
+            div#mensajeBusqueda
+
+            .mb-3
+              label.form-label(for="buscar_dni") Buscar por DNI
+              .input-group
+                input.form-control(type="text", id="buscar_dni", name="buscar_dni", placeholder="Ingrese DNI", value=dni || '')
+                button.btn.btn-outline-secondary(type="button", id="btnBuscarDNI") Buscar
+              div.text-danger.small#err_dni
+
             .mb-3
               label.form-label(for="id_paciente") Paciente
-              select.form-select(name="id_paciente", id="id_paciente", required)
+              select.form-select(name="id_paciente", id="id_paciente", disabled)
                 option(value="") -- Selecciona un paciente --
-                each paciente in pacientes
-                  option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido
               div.text-danger.small#err_paciente
 
             .mb-3
               label.form-label(for="fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="fecha_admision", required)
+              input.form-control(type="datetime-local", name="fecha_admision", id="fecha_admision")
               div.text-danger.small#err_fecha
 
             .mb-3
               label.form-label(for="tipo_ingreso") Tipo de Ingreso
-              input.form-control(type="text", name="tipo_ingreso", id="tipo_ingreso")
+              select.form-select(name="tipo_ingreso", id="tipo_ingreso")
+                option(value="") -- Selecciona un tipo --
+                option(value="Urgencia") Urgencia
+                option(value="Derivado") Derivado
               div.text-danger.small#err_tipo
-
-            .mb-3
-              label.form-label(for="estado") Estado
-              select.form-select(name="estado", id="estado", required)
-                option(value="activo") Activo
-                option(value="finalizado") Finalizado
-                option(value="en proceso...") En Proceso...
-              div.text-danger.small#err_estado
 
           .modal-footer
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
-            button.btn.btn-primary(type="submit") Guardar
+            button.btn.btn-primary(type="submit", id="btnGuardarAdmision", disabled) Guardar
 
   // Modal editar admisión
   .modal.fade#modalEditarAdmision(tabindex="-1")
@@ -87,17 +93,19 @@ block content
 
             .mb-3
               label.form-label(for="edit_fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision", required)
+              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision")
               div.text-danger.small#err_edit_fecha
 
             .mb-3
               label.form-label(for="edit_tipo_ingreso") Tipo de Ingreso
-              input.form-control(type="text", name="tipo_ingreso", id="edit_tipo_ingreso")
+              select.form-select(name="tipo_ingreso", id="edit_tipo_ingreso")
+                option(value="Urgencia") Urgencia
+                option(value="Derivado") Derivado
               div.text-danger.small#err_edit_tipo
 
             .mb-3
               label.form-label(for="edit_estado") Estado
-              select.form-select(name="estado", id="edit_estado", required)
+              select.form-select(name="estado", id="edit_estado")
                 option(value="activo") Activo
                 option(value="finalizado") Finalizado
                 option(value="cancelado") Cancelado
@@ -108,15 +116,12 @@ block content
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
             button.btn.btn-primary(type="submit") Guardar cambios
 
-  // CSS DataTables y Bootstrap 5 (lo ideal es ponerlos en layout head)
+  // CSS y JS externos
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
-
-  // JS jQuery, DataTables y Bootstrap 5
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
-  script(src="https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json")
-  //script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
 
+  // Script personalizado
   script.
     $(document).ready(function() {
       $('#tablaAdmisiones').DataTable({
@@ -126,116 +131,115 @@ block content
         responsive: true
       });
 
-      // Función para formatear fecha
       function formatearFecha(fechaStr) {
         if (!fechaStr) return '';
         const fecha = new Date(fechaStr);
         if (isNaN(fecha)) return fechaStr;
-
         const dia = String(fecha.getDate()).padStart(2, '0');
         const mes = String(fecha.getMonth() + 1).padStart(2, '0');
         const anio = fecha.getFullYear();
-
         const horas = String(fecha.getHours()).padStart(2, '0');
         const minutos = String(fecha.getMinutes()).padStart(2, '0');
-
         return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
       }
 
-      // Formatear fechas en la tabla
       $('#tablaAdmisiones tbody tr').each(function() {
         const $celdaFecha = $(this).find('td').eq(2);
         const fechaTexto = $celdaFecha.text().trim();
         const fechaFormateada = formatearFecha(fechaTexto);
         $celdaFecha.text(fechaFormateada);
       });
-    });
 
-    function limpiarErrores(prefix = '') {
-      ['paciente', 'fecha', 'tipo', 'estado'].forEach(id => {
-        const el = document.getElementById(`${prefix}err_${id}`);
-        if (el) el.textContent = '';
-      });
-    }
-
-    function validarYMostrarErrores(formulario, prefix = '') {
-      const paciente = formulario.querySelector('[name="id_paciente"]');
-      const fecha = formulario.querySelector('[name="fecha_admision"]');
-      const tipo = formulario.querySelector('[name="tipo_ingreso"]');
-      const estado = formulario.querySelector('[name="estado"]');
-      let errores = 0;
-
-      limpiarErrores(prefix);
-
-      if (paciente && !paciente.value) {
-        document.getElementById(`${prefix}err_paciente`).textContent = 'Debe seleccionar un paciente.';
-        errores++;
+      function mostrarMensaje(tipo, texto) {
+        const mensaje = document.getElementById('mensajeBusqueda');
+        mensaje.innerHTML = `
+          <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+            ${texto}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        `;
       }
 
-      if (!fecha.value) {
-        document.getElementById(`${prefix}err_fecha`).textContent = 'Debe ingresar la fecha.';
-        errores++;
-      } else {
-        const fechaValor = new Date(fecha.value);
-        const ahora = new Date();
-        if (isNaN(fechaValor.getTime())) {
-          document.getElementById(`${prefix}err_fecha`).textContent = 'Fecha inválida.';
-          errores++;
-        } else if (fechaValor > ahora) {
-          document.getElementById(`${prefix}err_fecha`).textContent = 'La fecha no puede ser futura.';
-          errores++;
+      document.getElementById('btnBuscarDNI').addEventListener('click', async () => {
+        const dni = document.getElementById('buscar_dni').value.trim();
+        const errorDiv = document.getElementById('err_dni');
+        const select = document.getElementById('id_paciente');
+        const btnGuardar = document.getElementById('btnGuardarAdmision');
+
+        errorDiv.textContent = '';
+        select.innerHTML = '<option value="">-- Selecciona un paciente --</option>';
+        select.disabled = true;
+        btnGuardar.disabled = true;
+        document.getElementById('mensajeBusqueda').innerHTML = '';
+
+        if (!dni || dni.length < 6) {
+          errorDiv.textContent = 'Ingrese un DNI válido.';
+          return;
         }
+
+        try {
+          const res = await fetch(`/admision/buscar-paciente/${dni}`);
+          if (!res.ok) throw await res.json();
+
+          const paciente = await res.json();
+
+          const option = document.createElement('option');
+          option.value = paciente.id_paciente;
+          option.textContent = `${paciente.nombre} ${paciente.apellido}`;
+          select.appendChild(option);
+          select.disabled = false;
+          select.value = paciente.id_paciente;
+          btnGuardar.disabled = false;
+
+          mostrarMensaje('success', `✅ Paciente encontrado: ${paciente.nombre} ${paciente.apellido}`);
+        } catch (err) {
+          mostrarMensaje('warning', `⚠️ Paciente no registrado. ¿Deseas <a href="/pacientes?nuevo=1&dni=${dni}" class="alert-link">crear uno nuevo?</a>`);
+        }
+      });
+
+      function validarFormularioAdmision() {
+        const dni = $('#buscar_dni').val().trim();
+        const paciente = $('#id_paciente').val();
+        const fechaAdmision = $('#fecha_admision').val();
+        const tipoIngreso = $('#tipo_ingreso').val();
+        let valido = true;
+
+        if (!dni || dni.length < 6) {
+          $('#err_dni').text('Ingrese un DNI válido.');
+          valido = false;
+        } else {
+          $('#err_dni').text('');
+        }
+
+        if (!paciente) {
+          $('#err_paciente').text('Seleccione un paciente.');
+          valido = false;
+        } else {
+          $('#err_paciente').text('');
+        }
+
+        if (!fechaAdmision) {
+          $('#err_fecha').text('La fecha de admisión es obligatoria.');
+          valido = false;
+        } else {
+          $('#err_fecha').text('');
+        }
+
+        if (!tipoIngreso) {
+          $('#err_tipo').text('Seleccione un tipo de ingreso.');
+          valido = false;
+        } else {
+          $('#err_tipo').text('');
+        }
+
+        return valido;
       }
 
-      if (!tipo.value || tipo.value.trim().length < 3) {
-        document.getElementById(`${prefix}err_tipo`).textContent = 'Debe ingresar al menos 3 caracteres.';
-        errores++;
-      }
+      $('form[action="/admision/guardar"]').on('submit', function (e) {
+        e.preventDefault();
 
-      const estadosValidos = ["activo", "finalizado", "cancelado", "en proceso..."];
-      if (!estadosValidos.includes(estado.value)) {
-        document.getElementById(`${prefix}err_estado`).textContent = 'Seleccione un estado válido.';
-        errores++;
-      }
-
-      return errores === 0;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const formNuevo = document.querySelector('form[action="/admision/guardar"]');
-      const formEditar = document.getElementById('formEditarAdmision');
-
-      if (formNuevo) {
-        formNuevo.addEventListener('submit', e => {
-          if (!validarYMostrarErrores(formNuevo)) {
-            e.preventDefault();
-          }
-        });
-      }
-
-      if (formEditar) {
-        formEditar.addEventListener('submit', e => {
-          if (!validarYMostrarErrores(formEditar, 'edit_')) {
-            e.preventDefault();
-          }
-        });
-      }
-
-      // Cargar datos al abrir modal editar
-      const modalEditar = document.getElementById('modalEditarAdmision');
-      modalEditar.addEventListener('show.bs.modal', event => {
-        const button = event.relatedTarget;
-        const id = button.getAttribute('data-id');
-        const paciente = button.getAttribute('data-paciente');
-        const fecha = button.getAttribute('data-fecha');
-        const tipo = button.getAttribute('data-tipo');
-        const estado = button.getAttribute('data-estado');
-
-        const form = document.getElementById('formEditarAdmision');
-        form.action = `/admision/actualizar/${id}`;
-        document.getElementById('edit_id_admision').value = id;
-        document.getElementById('edit_fecha_admision').value = fecha;
-        document.getElementById('edit_tipo_ingreso').value = tipo;
-        document.getElementById('edit_estado').value = estado;
+        if (validarFormularioAdmision()) {
+          this.submit();
+        }
       });
     });

@@ -1,189 +1,146 @@
 extends layout
 
 block content
-  .d-flex.justify-content-between.align-items-center.mb-3
-    h2.mb-0 Listado y Gestión de Pacientes
+  .container.mt-5
+    h1.text-center Pacientes Activos
 
-  .d-flex.gap-3.mb-4
-    .card.text-center(style="min-width: 150px;")
-      .card-body
-        h5.card-title Total Pacientes
-        p.card-text#totalPacientes 0
-    .card.text-center(style="min-width: 150px;")
-      .card-body
-        h5.card-title Femenino
-        p.card-text.text-danger#totalFemenino 0
-    .card.text-center(style="min-width: 150px;")
-      .card-body
-        h5.card-title Masculino
-        p.card-text.text-primary#totalMasculino 0
+    // Contadores
+    .row.text-center.mb-4
+      .col-md-4
+        .card.text-bg-light
+          .card-body(style="background-color:rgb(66, 180, 123);")
+            h5 Total de Pacientes
+            h3#totalPacientes
+      .col-md-4
+        .card.text-bg-primary.text-white
+          .card-body(style="background-color: #f8c8dc;") 
+            h5 Femeninos
+            h3#totalFemenino
+      .col-md-4
+        .card.text-bg-success.text-white
+          .card-body(style="background-color: #add8e6;")
+            h5 Masculinos
+            h3#totalMasculino
 
-  table#tablaPacientes.table.table-striped
-    thead
-      tr
-        th Nombre
-        th Apellido
-        th DNI
-        th Fecha Nac.
-        th Género
-        th Teléfono
-        th Altura
-        th Peso
-        th Obra Social
-        th Contacto Emergencia
-        th Dirección
-        th Estado
-        th Acciones
-    tbody
-      each paciente in pacientes
-        tr(data-dni=paciente.dni)
-          td= paciente.nombre
-          td= paciente.apellido
-          td= paciente.dni
-          td= paciente.fechaISO ? paciente.fechaISO.substring(0, 10) : ''
-          td= paciente.genero
-          td= paciente.telefono
-          td= paciente.altura
-          td= paciente.peso
-          td= paciente.obraSocial ? paciente.obraSocial.nombre : 'No Posee'
-          td= paciente.contacto_emergencia
-          td= paciente.direccion
-          td
-            button.btn.btn-sm(
-              class=paciente.estado === 'Activo' ? 'btn-success' : 'btn-secondary',
-              onclick=`toggleEstado(${paciente.id_paciente}, this)`
-            )= paciente.estado
-          td
-            a.btn.btn-warning.btn-sm(href=`/pacientes/${paciente.id_paciente}/editar`) Editar
+    // Botón para abrir modal nuevo paciente
+    .d-flex.justify-content-end.mb-3
+      button.btn.btn-primary(data-bs-toggle="modal", data-bs-target="#nuevoPacienteModal")
+        | + Nuevo Paciente
 
-  .modal.fade#nuevoPacienteModal(tabindex="-1", aria-labelledby="nuevoPacienteModalLabel", aria-hidden="true")
-    .modal-dialog
-      .modal-content
-        .modal-header
-          h5.modal-title#nuevoPacienteModalLabel Nuevo Paciente
-          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
-        form(method="POST", action="/pacientes")
-          .modal-body
-            .mb-3
-              label.form-label(for="nombre") Nombre
-              input.form-control(type="text", name="nombre", required)
-              small.text-danger.d-none#error-nombre
-            .mb-3
-              label.form-label(for="apellido") Apellido
-              input.form-control(type="text", name="apellido", required)
-              small.text-danger.d-none#error-apellido
-            .mb-3
-              label.form-label(for="dni") DNI
-              input.form-control(type="text", name="dni", id="dniNuevoPaciente", required)
-              small.text-danger.d-none#error-dni
-            .mb-3
-              label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
-              input.form-control(type="date", name="fecha_nacimiento", required)
-              small.text-danger.d-none#error-fecha_nacimiento
-            .mb-3
-              label.form-label(for="genero") Género
-              select.form-select(name="genero", required)
-                option(value="") Seleccionar
-                option(value="Masculino") Masculino
-                option(value="Femenino") Femenino
-                option(value="Otro") Otro
-              small.text-danger.d-none#error-genero
-            .mb-3
-              label.form-label(for="telefono") Teléfono
-              input.form-control(type="text", name="telefono")
-              small.text-danger.d-none#error-telefono
-            .mb-3
-              label.form-label(for="altura") Altura (cm)
-              input.form-control(type="number", name="altura", step="0.1")
-              small.text-danger.d-none#error-altura
-            .mb-3
-              label.form-label(for="peso") Peso (kg)
-              input.form-control(type="number", name="peso", step="0.1")
-              small.text-danger.d-none#error-peso
-            .mb-3
-              label.form-label(for="id_obra_social") Obra Social
-              select.form-select(name="id_obra_social", required)
-                option(value="") Seleccionar
-                option(value="null") No posee seguro médico
-                each obra in obrasSociales
-                  option(value=obra.id_obra_social)= obra.nombre
-              small.text-danger.d-none#error-id_obra_social
-            .mb-3
-              label.form-label(for="contacto_emergencia") Contacto de Emergencia
-              input.form-control(type="text", name="contacto_emergencia")
-            .mb-3
-              label.form-label(for="direccion") Dirección
-              input.form-control(type="text", name="direccion")
-            .mb-3
-              label.form-label(for="estado") Estado
-              select.form-select(name="estado")
-                option(value="Activo") Activo
-                option(value="Inactivo") Inactivo
-          .modal-footer
-            button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
-            button.btn.btn-primary(type="submit") Guardar
+    // Tabla
+    table#tablaPacientes.table.table-striped.table-hover
+      thead
+        tr
+          th DNI
+          th Nombre
+          th Apellido
+          th Edad
+          th Género
+          th Teléfono
+          th Obra Social
+          th Estado
+          th Acciones
+      tbody
+        each paciente in pacientes
+          tr
+            td= paciente.dni
+            td= paciente.nombre
+            td= paciente.apellido
+            td= paciente.edad
+            td= paciente.genero
+            td= paciente.telefono
+            td= paciente.nombreObraSocial
+            td
+              button.btn(
+                class=paciente.estado === 'Activo' ? 'btn-success' : 'btn-secondary',
+                onclick=`toggleEstado(${paciente.id_paciente}, this)`
+              )= paciente.estado
+            td
+              a.btn.btn-sm.btn-outline-primary(href=`/pacientes/${paciente.id_paciente}/editar`) Editar
 
-  #toastContainer.position-fixed.bottom-0.end-0.p-3(style="z-index: 9999")
-    .toast#estadoToast(role="alert", aria-live="assertive", aria-atomic="true")
-      .toast-header
-        strong.me-auto Sistema
-        small.text-muted Ahora
-        button.btn-close(type="button", data-bs-dismiss="toast", aria-label="Cerrar")
-      .toast-body#toastBody Estado actualizado correctamente.
+    // Modal nuevo paciente
+    .modal.fade#nuevoPacienteModal(tabindex='-1')
+      .modal-dialog.modal-lg
+        .modal-content
+          .modal-header
+            h5.modal-title Nuevo Paciente
+            button.btn-close(type='button', data-bs-dismiss='modal')
+          form(action='/pacientes', method='POST')
+            .modal-body
+              .row
+                .col-md-6
+                  label.form-label Nombre
+                  input.form-control(type='text', name='nombre', required)
+                .col-md-6
+                  label.form-label Apellido
+                  input.form-control(type='text', name='apellido', required)
+              .row.mt-2
+                .col-md-4
+                  label.form-label DNI
+                  input.form-control(type='text', name='dni', required)
+                .col-md-4
+                  label.form-label Género
+                  select.form-select(name='genero', required)
+                    option(value='') Seleccionar
+                    option(value='Masculino') Masculino
+                    option(value='Femenino') Femenino
+                .col-md-4
+                  label.form-label Fecha de Nacimiento
+                  input.form-control(type='date', name='fecha_nacimiento', required)
+              .row.mt-2
+                .col-md-4
+                  label.form-label Altura (cm)
+                  input.form-control(type='number', name='altura')
+                .col-md-4
+                  label.form-label Peso (kg)
+                  input.form-control(type='number', name='peso')
+                .col-md-4
+                  label.form-label Teléfono
+                  input.form-control(type='text', name='telefono')
+              .row.mt-2
+                .col-md-6
+                  label.form-label Contacto de Emergencia
+                  input.form-control(type='text', name='contacto_emergencia')
+                .col-md-6
+                  label.form-label Dirección
+                  input.form-control(type='text', name='direccion')
+              .row.mt-2
+                .col-md-6
+                  label.form-label Obra Social
+                  select.form-select(name='id_obra_social')
+                    option(value='') Sin obra social
+                    each obra in obrasSociales
+                      option(value=obra.id_obra_social)= obra.nombre
+                .col-md-6
+                  label.form-label Estado
+                  select.form-select(name='estado', required)
+                    option(value='Activo') Activo
+                    option(value='Inactivo') Inactivo
+            .modal-footer
+              button.btn.btn-secondary(type='button', data-bs-dismiss='modal') Cancelar
+              button.btn.btn-primary(type='submit') Guardar
 
-  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
-  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
-  script(src="https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json")
-  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
+    // Toast de estado
+    .position-fixed.bottom-0.end-0.p-3(style='z-index: 11')
+      .toast#estadoToast(role='alert', aria-live='assertive', aria-atomic='true')
+        .toast-header
+          strong.me-auto Estado del Paciente
+          small.text-muted Ahora
+          button.btn-close(type='button', data-bs-dismiss='toast')
+        .toast-body#toastBody
+
+  // Scripts
+  script(src='https://code.jquery.com/jquery-3.6.0.min.js')
+  script(src='https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js')
+  script(src='https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js')
 
   script.
-    $(document).ready(function() {
-      const table = $('#tablaPacientes').DataTable({
+    $(document).ready(function () {
+      $('#tablaPacientes').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
-        responsive: true,
-        initComplete: function () {
-          const buscarForm = `
-            <div class="d-flex gap-2">
-              <input id="buscarDniInput" class="form-control form-control-sm" placeholder="Buscar por DNI">
-              <button class="btn btn-outline-primary btn-sm" id="btnBuscarDni">Buscar</button>
-              <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#nuevoPacienteModal">
-                <i class="fas fa-plus-circle me-1"></i> + Agregar Paciente
-              </button>
-            </div>
-          `;
-          $('#tablaPacientes_length').prepend(buscarForm);
-
-          $('#btnBuscarDni').on('click', function () {
-            const dni = $('#buscarDniInput').val().trim();
-            if (!dni) return alert('Ingresá un DNI válido');
-
-            fetch(`/pacientes/buscar?dni=${dni}`)
-              .then(res => res.json())
-              .then(data => {
-                if (data && data.dni) {
-                  const fila = $(`tr[data-dni="${dni}"]`);
-                  if (fila.length) {
-                    $('html, body').animate({
-                      scrollTop: fila.offset().top - 100
-                    }, 500);
-                    fila.addClass('table-warning');
-                    setTimeout(() => fila.removeClass('table-warning'), 3000);
-                  }
-                } else {
-                  if (confirm('No se encontró el paciente. ¿Desea crear uno nuevo?')) {
-                    $('#nuevoPacienteModal').modal('show');
-                    $('#dniNuevoPaciente').val(dni);
-                  }
-                }
-              })
-              .catch(err => {
-                console.error('Error buscando paciente', err);
-                alert('Ocurrió un error al buscar el paciente');
-              });
-          });
-        }
+        responsive: true
       });
     });
 
@@ -232,48 +189,10 @@ block content
     document.addEventListener('DOMContentLoaded', function () {
       actualizarContadores();
 
-      const form = document.querySelector('form[action="/pacientes"]');
-      const fields = {
-        nombre: { required: true },
-        apellido: { required: true },
-        dni: { required: true, pattern: /^\d{7,9}$/, message: 'El DNI debe tener entre 7 y 9 dígitos numéricos.' },
-        fecha_nacimiento: { required: true },
-        genero: { required: true },
-        telefono: { required: false, pattern: /^[\d\s\-+()]{7,20}$/, message: 'Teléfono inválido.' },
-        altura: { required: false, pattern: /^\d+(\.\d{1,2})?$/, message: 'Altura debe ser un número válido.' },
-        peso: { required: false, pattern: /^\d+(\.\d{1,2})?$/, message: 'Peso debe ser un número válido.' },
-        id_obra_social: { required: true }
-      };
-
-      form.addEventListener('submit', function (e) {
-        let valid = true;
-
-        Object.entries(fields).forEach(([field, rules]) => {
-          const input = form.elements[field];
-          const error = document.getElementById('error-' + field);
-          if (!input || !error) return;
-          let value = input.value.trim();
-          let fieldValid = true;
-          let errorMessage = '';
-
-          if (rules.required && (!value || value === '')) {
-            fieldValid = false;
-            errorMessage = 'Este campo es obligatorio.';
-          } else if (rules.pattern && value && !rules.pattern.test(value)) {
-            fieldValid = false;
-            errorMessage = rules.message || 'Valor inválido.';
-          }
-
-          if (!fieldValid) {
-            error.classList.remove('d-none');
-            error.textContent = errorMessage;
-            valid = false;
-          } else {
-            error.classList.add('d-none');
-            error.textContent = '';
-          }
-        });
-
-        if (!valid) e.preventDefault();
-      });
+      // 👇 Abrir modal automáticamente si ?nuevo=1
+      const abrir = !{abrirModalNuevoPaciente};
+      if (abrir) {
+        const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
+        modal.show();
+      }
     });
