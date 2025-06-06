@@ -1,25 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const PacienteController = require('../controllers/pacienteController');
 
-// Importar el controlador de pacientes
-const pacienteController = require('../controllers/pacienteController');
+// Ruta para actualizar un paciente (PUT con override)
+router.put('/:id', PacienteController.actualizarPaciente);
 
-// Crear paciente
-router.post('/', pacienteController.crearPaciente);
+// Ruta para mostrar el formulario de edición
+router.get('/:id/editar', PacienteController.mostrarFormularioEditar);
 
-// Ver pacientes activos
-router.get('/', pacienteController.verActivos);
+// Ruta para cambiar estado activo/inactivo
+router.post('/:id/toggle-estado', PacienteController.toggleEstado);
 
-// API: obtener todos los pacientes (podés mover esto a otro router si es estrictamente para API)
-router.get('/api', pacienteController.obtenerTodosPacientes);
+// Ruta para crear paciente
+router.post('/', PacienteController.crearPaciente);
 
-// Mostrar formulario de edición
-router.get('/:id/editar', pacienteController.mostrarFormularioEditar);
-
-// Actualizar paciente
-router.post('/:id/editar', pacienteController.actualizarPaciente);
-
-// Cambiar estado (activar/desactivar)
-router.post('/:id/toggle-estado', pacienteController.toggleEstado);
+// Ruta para listar
+router.get('/', PacienteController.verActivos);
 
 module.exports = router;

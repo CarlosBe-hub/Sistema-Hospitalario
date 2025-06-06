@@ -21,7 +21,6 @@ const ObraSocial = require('./ObraSocialModel');
 const Paciente = require('./PacienteModel');
 const SignosVitales = require('./SignosVitalesModel');
 
-// Relaciones
 
 // Paciente
 Paciente.hasMany(Internacion, { foreignKey: 'id_paciente' });
@@ -41,6 +40,16 @@ CuidadosEnfermeria.belongsTo(Paciente, { foreignKey: 'id_paciente' });
 
 Paciente.hasMany(Admision, { foreignKey: 'id_paciente' });
 Admision.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'paciente' });
+
+// 🔧 RELACIÓN QUE FALTABA: Paciente - ObraSocial
+Paciente.belongsTo(ObraSocial, {
+  foreignKey: 'id_obra_social',
+  as: 'obraSocial'
+});
+ObraSocial.hasMany(Paciente, {
+  foreignKey: 'id_obra_social',
+  as: 'pacientes'
+});
 
 // Internacion
 Internacion.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
@@ -62,7 +71,6 @@ Internacion.hasMany(SignosVitales, { foreignKey: 'id_internacion' });
 SignosVitales.belongsTo(Internacion, { foreignKey: 'id_internacion' });
 
 // Habitacion
-//Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'ala' });
 Ala.hasMany(Habitacion, { foreignKey: 'id_ala' });
 
 Habitacion.hasMany(Cama, { foreignKey: 'id_habitacion' });

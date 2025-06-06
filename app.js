@@ -10,6 +10,7 @@ const { sequelize } = require('./models');
 const pacientesRoutes = require('./routes/pacientes');
 const admisionRoutes = require('./routes/admision');
 const internacionRoutes = require('./routes/internacion');
+const emergenciaRoutes = require('./routes/emergencia'); 
 
 // Configuración del motor de vistas
 app.set('view engine', 'pug');
@@ -18,15 +19,20 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware para parsear datos de formularios y JSON
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.url}`);
+  next();
+});
 app.use(methodOverride('_method'));
 
-// Middleware core (si incluye variables globales u otros)
+// Middleware core 
 require('./middlewares/core')(app);
 
 // Montar rutas con prefijo
 app.use('/pacientes', pacientesRoutes);
 app.use('/admision', admisionRoutes);
 app.use('/internacion', internacionRoutes);
+app.use('/emergencia', emergenciaRoutes); 
 
 // Ruta principal
 app.get('/', (req, res) => {

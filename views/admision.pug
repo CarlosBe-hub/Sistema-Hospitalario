@@ -42,11 +42,9 @@ block content
           button.btn-close(type="button", data-bs-dismiss="modal")
         form(action="/admision/guardar", method="POST")
           .modal-body
-            // Contenedor para mostrar mensaje si el paciente tiene admisión activa
             div#mensajeError.alert.alert-danger(style="display:none")
               | <strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.
 
-            // Mensaje de búsqueda de paciente
             div#mensajeBusqueda
 
             .mb-3
@@ -87,10 +85,10 @@ block content
           h5.modal-title Editar Admisión
           button.btn-close(type="button", data-bs-dismiss="modal")
         form#formEditarAdmision(method="POST")
-          .modal-body
-            input(type="hidden", name="_method", value="PUT")
-            input(type="hidden", name="id_admision", id="edit_id_admision")
+          input(type="hidden", name="_method", value="PUT")
+          input(type="hidden", name="id_admision", id="edit_id_admision")
 
+          .modal-body
             .mb-3
               label.form-label(for="edit_fecha_admision") Fecha de Admisión
               input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision")
@@ -150,6 +148,23 @@ block content
         $celdaFecha.text(fechaFormateada);
       });
 
+      $('#modalEditarAdmision').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const idAdmision = button.data('id');
+        const fecha = button.data('fecha');
+        const tipo = button.data('tipo');
+        const estado = button.data('estado');
+
+        const modal = $(this);
+        modal.find('#edit_id_admision').val(idAdmision);
+        modal.find('#edit_fecha_admision').val(fecha);
+        modal.find('#edit_tipo_ingreso').val(tipo);
+        modal.find('#edit_estado').val(estado);
+
+        const form = modal.find('#formEditarAdmision');
+        form.attr('action', `/admision/${idAdmision}?_method=PUT`);
+      });
+
       function mostrarMensaje(tipo, texto) {
         const mensaje = document.getElementById('mensajeBusqueda');
         mensaje.innerHTML = `
@@ -165,12 +180,13 @@ block content
         const errorDiv = document.getElementById('err_dni');
         const select = document.getElementById('id_paciente');
         const btnGuardar = document.getElementById('btnGuardarAdmision');
+        const mensajeError = document.getElementById('mensajeError');
 
         errorDiv.textContent = '';
         select.innerHTML = '<option value="">-- Selecciona un paciente --</option>';
         select.disabled = true;
         btnGuardar.disabled = true;
-        document.getElementById('mensajeBusqueda').innerHTML = '';
+        mensajeError.style.display = 'none';
 
         if (!dni || dni.length < 6) {
           errorDiv.textContent = 'Ingrese un DNI válido.';
@@ -182,6 +198,12 @@ block content
           if (!res.ok) throw await res.json();
 
           const paciente = await res.json();
+
+          if (paciente.admisionActiva) {
+            mensajeError.style.display = 'block';
+            mensajeError.innerHTML = `<strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.`;
+            return;
+          }
 
           const option = document.createElement('option');
           option.value = paciente.id_paciente;

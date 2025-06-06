@@ -32,12 +32,4 @@ Admision.init({
   timestamps: false
 });
 
-// Asociación con Paciente
-Admision.associate = (models) => {
-  Admision.belongsTo(models.Paciente, {
-    foreignKey: 'id_paciente',
-    as: 'paciente'
-  });
-};
-
 module.exports = Admision;

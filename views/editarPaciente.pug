@@ -3,7 +3,9 @@ extends layout
 block content
   h2 Editar Paciente
 
-  form(method="POST", action=`/pacientes/${paciente.id_paciente}/editar`)
+  form(method="POST", action=`/pacientes/${paciente.id_paciente}?_method=PUT`)
+    input(type="hidden", name="_method", value="PUT")
+
     .mb-3
       label.form-label(for="nombre") Nombre
       input.form-control(type="text", name="nombre", required, value=paciente.nombre)
@@ -18,7 +20,12 @@ block content
 
     .mb-3
       label.form-label(for="fecha_nacimiento") Fecha de Nacimiento
-      input.form-control(type="date", name="fecha_nacimiento", required, value=paciente.fecha_nacimiento.toISOString().substring(0, 10))
+      input.form-control(
+        type="date",
+        name="fecha_nacimiento",
+        required,
+        value=paciente.fecha_nacimiento ? paciente.fecha_nacimiento.toISOString().substring(0, 10) : ''
+      )
 
     .mb-3
       label.form-label(for="genero") Género
@@ -34,16 +41,16 @@ block content
 
     .mb-3
       label.form-label(for="altura") Altura (cm)
-      input.form-control(type="number", step="0.01", name="altura", value=paciente.altura)
+      input.form-control(type="number", step="0.01", min="0", name="altura", value=paciente.altura)
 
     .mb-3
       label.form-label(for="peso") Peso (kg)
-      input.form-control(type="number", step="0.01", name="peso", value=paciente.peso)
+      input.form-control(type="number", step="0.01", min="0", name="peso", value=paciente.peso)
 
     .mb-3
       label.form-label(for="id_obra_social") Obra Social
       select.form-select(name="id_obra_social")
-        option(value="null") No posee seguro medico
+        option(value="null", selected=!paciente.id_obra_social) No posee seguro medico
         each obra in obrasSociales
           option(
             value=obra.id_obra_social,

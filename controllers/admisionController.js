@@ -53,7 +53,8 @@ exports.guardarAdmision = async (req, res) => {
 
     if (admisionActiva) {
       return res.status(400).json({
-        error: 'Este paciente ya tiene una admisión activa. El paciente está actualmente internado.'
+        error: 'Este paciente ya tiene una admisión activa. El paciente está actualmente internado.',
+        admisionActiva: true // Añadimos esta propiedad
       });
     }
 
@@ -158,7 +159,15 @@ exports.buscarPacientePorDNI = async (req, res) => {
       return res.status(404).json({ error: 'Paciente no encontrado' });
     }
 
-    res.status(200).json(paciente);
+    // Verificar si el paciente tiene una admisión activa
+    const admisionActiva = await Admision.findOne({
+      where: { id_paciente: paciente.id_paciente, estado: 'activo' }
+    });
+
+    res.status(200).json({
+      ...paciente.toJSON(),
+      admisionActiva: admisionActiva ? true : false
+    });
   } catch (error) {
     console.error('Error al buscar paciente por DNI:', error);
     res.status(500).json({ error: 'Error al buscar paciente' });

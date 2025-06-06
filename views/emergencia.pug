@@ -1,0 +1,49 @@
+extends layout
+
+block content
+  .container.mt-5
+    h2.text-danger.mb-4
+      i.bi.bi-person-fill-add.me-2
+      | Crear Paciente NN (Emergencia)
+
+    if success
+      .alert.alert-success Paciente de emergencia creado correctamente.
+
+    if error
+      .alert.alert-danger= error
+
+    form(action='/emergencia/crear', method='POST')
+      .row.mb-3
+        .col-md-6
+          label.form-label(for='diagnostico') Motivo de Internación
+          input.form-control(
+            type='text', 
+            name='diagnostico', 
+            required, 
+            value=(typeof diagnostico !== 'undefined' ? diagnostico : '')
+          )
+
+        .col-md-6
+          label.form-label(for='id_habitacion') Habitación
+          select.form-select(name='id_habitacion', required)
+            option(value='') Selecciona una habitación
+            each habitacion in habitaciones
+              option(
+                value=habitacion.id_habitacion, 
+                selected=(typeof id_habitacion !== 'undefined' && id_habitacion == habitacion.id_habitacion)
+              )= habitacion.numero
+
+      .row.mb-3
+        .col-md-6
+          label.form-label(for='id_motivo') Diagnostico (opcional)
+          select.form-select(name='id_motivo')
+            option(value='') Selecciona un motivo
+            each motivo in motivos
+              option(
+                value=motivo.id_motivo, 
+                selected=(typeof id_motivo !== 'undefined' && id_motivo == motivo.id_motivo)
+              )= motivo.descripcion
+
+      button.btn.btn-danger(type='submit')
+        i.bi.bi-save.me-2
+        | Crear e Internar Paciente NN

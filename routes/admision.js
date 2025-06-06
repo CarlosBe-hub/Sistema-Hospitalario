@@ -8,8 +8,8 @@ router.get('/', admisionController.vistaListado);
 // Guardar nueva admisión (desde el modal)
 router.post('/guardar', admisionController.guardarAdmision);
 
-// Actualizar una admisión existente
-router.post('/editar/:id', admisionController.actualizarAdmision);
+// Ruta PUT para actualizar admisión
+router.put('/:id', admisionController.actualizarAdmision);
 
 // Dar de baja (cambiar estado a "cancelado")
 router.post('/baja/:id', admisionController.darDeBajaAdmision);
