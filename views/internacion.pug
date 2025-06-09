@@ -10,157 +10,202 @@ block content
         select.form-select(name="id_paciente", id="id_paciente", required)
           option(value="" disabled selected) Seleccionar paciente
           each paciente in pacientes
-            option(value=paciente.id_paciente)= `${paciente.nombre} ${paciente.apellido}`
+            option(
+              value=paciente.id_paciente 
+              selected=(datosPrevios && datosPrevios.id_paciente == paciente.id_paciente)
+            )= paciente.nombre + ' ' + paciente.apellido
         small.text-danger#error-paciente
 
       .mb-3
         label.form-label(for="fecha_ingreso") Fecha de ingreso:
-        input.form-control(type="date", name="fecha_ingreso", id="fecha_ingreso", required)
+        input.form-control(type="date", name="fecha_ingreso", id="fecha_ingreso", required value=datosPrevios ? datosPrevios.fecha_ingreso : '')
         small.text-danger#error-fecha
 
       .mb-3
-        label.form-label(for="diagnostico") Diagnóstico:
-        select.form-select(name="diagnostico", id="diagnostico", required)
-          option(value="" disabled selected) Seleccionar diagnóstico
-          each diag in diagnosticos
-            option(value=diag)= diag
-        small.text-danger#error-diagnostico
+        label.form-label(for="id_motivo") Motivo de internación:
+        select.form-select(name="id_motivo", id="id_motivo", required)
+          option(value="" disabled selected) Seleccionar motivo
+          each motivo in motivos
+            option(
+              value=motivo.id_motivo 
+              selected=(datosPrevios && datosPrevios.id_motivo == motivo.id_motivo)
+            )= motivo.descripcion
+        small.text-danger#error-motivo
 
       .mb-3
-        label.form-label(for="id_motivo") Motivo de internación (opcional):
-        input.form-control(type="text", name="id_motivo", placeholder="Detalles adicionales del diagnóstico")
+        label.form-label(for="descripcion") Descripción adicional del motivo (opcional):
+        textarea.form-control(name="descripcion", id="descripcion", rows="3", placeholder="Agregar una descripción adicional al motivo si corresponde")= datosPrevios ? datosPrevios.descripcion : ''
 
       .mb-3
         label.form-label(for="id_ala") Ala:
         select.form-select#ala-select(name="id_ala", required)
           option(value="" disabled selected) Seleccionar ala
           each ala in alas
-            option(value=ala.id_ala)= ala.nombre
+            option(
+              value=ala.id_ala 
+              selected=(datosPrevios && datosPrevios.id_ala == ala.id_ala)
+            )= ala.nombre
         small.text-danger#error-ala
 
       .mb-3
         label.form-label(for="id_habitacion") Habitación:
-        select.form-select#habitacion-select(name="id_habitacion", required disabled)
+        select.form-select#habitacion-select(name="id_habitacion", required)
           option(value="" disabled selected) Seleccionar habitación
         small.text-danger#error-habitacion
 
       .mb-3
         label.form-label(for="id_cama") Cama:
-        select.form-select#cama-select(name="id_cama", required disabled)
+        select.form-select#cama-select(name="id_cama", required)
           option(value="" disabled selected) Seleccionar cama
         small.text-danger#error-cama
 
       button.btn.btn-primary(type="submit") Internar Paciente
 
-    script.
-      const habitaciones = !{JSON.stringify(habitaciones)};
-      const camas = !{JSON.stringify(camas)};
+  if error
+    .alert.alert-danger.mt-4 #{error}
 
-      const habSelect = document.getElementById('habitacion-select');
-      const camaSelect = document.getElementById('cama-select');
-      const alaSelect = document.getElementById('ala-select');
+  script.
+    const habitaciones = !{JSON.stringify(habitaciones)};
+    const camas = !{JSON.stringify(camas)};
+    const datosPrevios = !{JSON.stringify(datosPrevios || {})};
 
-      alaSelect.addEventListener('change', function () {
-        const alaId = this.value;
-        habSelect.innerHTML = '<option disabled selected>Seleccionar habitación</option>';
-        habSelect.disabled = false;
+    const habSelect = document.getElementById('habitacion-select');
+    const camaSelect = document.getElementById('cama-select');
+    const alaSelect = document.getElementById('ala-select');
 
-        const filteredHab = habitaciones.filter(h => h.id_ala == alaId);
-        filteredHab.forEach(h => {
-          habSelect.innerHTML += `<option value="${h.id_habitacion}">Habitación ${h.numero}</option>`;
-        });
+    function limpiarSelect(select, label) {
+      select.innerHTML = '';
+      const opt = new Option(label, '', true, true);
+      opt.disabled = true;
+      select.appendChild(opt);
+    }
 
-        camaSelect.innerHTML = '<option disabled selected>Seleccionar cama</option>';
-        camaSelect.disabled = true;
+    function cargarHabitaciones(idAla) {
+      limpiarSelect(habSelect, 'Seleccionar habitación');
+      limpiarSelect(camaSelect, 'Seleccionar cama');
+      habSelect.disabled = false;
+      camaSelect.disabled = true;
 
-        clearError('ala');
-      });
-
-      habSelect.addEventListener('change', function () {
-        const habId = this.value;
-        camaSelect.innerHTML = '<option disabled selected>Seleccionar cama</option>';
-        camaSelect.disabled = false;
-
-        const filteredCamas = camas.filter(c => c.id_habitacion == habId);
-        filteredCamas.forEach(c => {
-          const estado = c.estado.trim().toLowerCase();
-          const habilitada = estado === 'libre' || estado === 'higienizada';
-          const disabledAttr = habilitada ? '' : 'disabled';
-          camaSelect.innerHTML += `<option value="${c.id_cama}" ${disabledAttr}>Cama ${c.numero} (${c.estado})</option>`;
-        });
-
-        clearError('habitacion');
-      });
-
-      document.getElementById('form-internacion').addEventListener('submit', function (e) {
-        const paciente = document.getElementById('id_paciente').value;
-        const fechaIngreso = document.getElementById('fecha_ingreso').value;
-        const diagnostico = document.getElementById('diagnostico').value;
-        const ala = alaSelect.value;
-        const habitacion = habSelect.value;
-        const cama = camaSelect.value;
-
-        let errores = 0;
-
-        if (!paciente) {
-          showError('paciente', 'Debe seleccionar un paciente.');
-          errores++;
+      const filteredHab = habitaciones.filter(h => h.id_ala == idAla);
+      filteredHab.forEach(h => {
+        const opt = new Option(`Habitación ${h.numero}`, h.id_habitacion);
+        if (datosPrevios.id_habitacion == h.id_habitacion) {
+          opt.selected = true;
         }
+        habSelect.appendChild(opt);
+      });
+    }
 
-        if (!fechaIngreso) {
-          showError('fecha', 'Debe ingresar una fecha.');
-          errores++;
+    function cargarCamas(idHabitacion) {
+      limpiarSelect(camaSelect, 'Seleccionar cama');
+      camaSelect.disabled = false;
+
+      const filteredCamas = camas.filter(c => c.id_habitacion == idHabitacion);
+      filteredCamas.forEach(c => {
+        const opt = new Option(`${c.numero} (${c.estado})`, c.id_cama);
+        const estado = c.estado.trim().toLowerCase();
+        if (!['libre', 'higienizada', 'disponible'].includes(estado)) {
+          opt.disabled = true;
+          opt.style.color = 'gray';
         } else {
-          const hoy = new Date().toISOString().split('T')[0];
-          if (fechaIngreso > hoy) {
-            showError('fecha', 'La fecha no puede ser futura.');
-            errores++;
-          } else {
-            clearError('fecha');
-          }
+          opt.style.color = 'green';
         }
-
-        if (!diagnostico) {
-          showError('diagnostico', 'Debe seleccionar un diagnóstico.');
-          errores++;
+        if (datosPrevios.id_cama == c.id_cama) {
+          opt.selected = true;
         }
-
-        if (!ala) {
-          showError('ala', 'Debe seleccionar un ala.');
-          errores++;
-        }
-
-        if (!habitacion) {
-          showError('habitacion', 'Debe seleccionar una habitación.');
-          errores++;
-        }
-
-        if (!cama) {
-          showError('cama', 'Debe seleccionar una cama.');
-          errores++;
-        } else {
-          const camaSeleccionada = camas.find(c => c.id_cama == cama);
-          const estado = camaSeleccionada?.estado?.trim().toLowerCase();
-          if (estado !== 'libre' && estado !== 'higienizada') {
-            showError('cama', 'La cama seleccionada no está disponible.');
-            errores++;
-          }
-        }
-
-        if (errores > 0) {
-          e.preventDefault();
-        }
+        camaSelect.appendChild(opt);
       });
+    }
 
-      function showError(id, mensaje) {
-        document.getElementById(`error-${id}`).textContent = mensaje;
+    alaSelect.addEventListener('change', () => {
+      cargarHabitaciones(alaSelect.value);
+      clearError('ala');
+    });
+
+    habSelect.addEventListener('change', () => {
+      cargarCamas(habSelect.value);
+      clearError('habitacion');
+    });
+
+    // Si hay datos previos, cargar selects correspondientes
+    if (datosPrevios.id_ala) {
+      cargarHabitaciones(datosPrevios.id_ala);
+    }
+    if (datosPrevios.id_habitacion) {
+      cargarCamas(datosPrevios.id_habitacion);
+    }
+
+    // Validación al enviar
+    document.getElementById('form-internacion').addEventListener('submit', function (e) {
+      const paciente = document.getElementById('id_paciente').value;
+      const fechaIngreso = document.getElementById('fecha_ingreso').value;
+      const motivo = document.getElementById('id_motivo').value;
+      const ala = alaSelect.value;
+      const habitacion = habSelect.value;
+      const cama = camaSelect.value;
+
+      let errores = 0;
+
+      if (!paciente) {
+        showError('paciente', 'Debe seleccionar un paciente.');
+        errores++;
       }
 
-      function clearError(id) {
-        document.getElementById(`error-${id}`).textContent = '';
+      if (!fechaIngreso) {
+        showError('fecha', 'Debe ingresar una fecha.');
+        errores++;
+      } else {
+        const hoy = new Date().toISOString().split('T')[0];
+        if (fechaIngreso > hoy) {
+          showError('fecha', 'La fecha no puede ser futura.');
+          errores++;
+        } else {
+          clearError('fecha');
+        }
       }
 
-      // Limpieza de errores en cambios
-      document.getElementById('id_paciente').addEventListener('change', () => clearError('paciente'));
-      document.getElementById('diagnostico').addEventListener('change', () => clearError('diagnostico'));
-      document.getElementById('fecha_ingreso').addEventListener('input', () => clearError('fecha'));
+      if (!motivo) {
+        showError('motivo', 'Debe seleccionar un motivo.');
+        errores++;
+      } else {
+        clearError('motivo');
+      }
+
+      if (!ala) {
+        showError('ala', 'Debe seleccionar un ala.');
+        errores++;
+      }
+
+      if (!habitacion) {
+        showError('habitacion', 'Debe seleccionar una habitación.');
+        errores++;
+      }
+
+      if (!cama) {
+        showError('cama', 'Debe seleccionar una cama.');
+        errores++;
+      } else {
+        const camaSeleccionada = camas.find(c => c.id_cama == cama);
+        const estado = camaSeleccionada?.estado?.trim().toLowerCase();
+        if (!['libre', 'higienizada', 'disponible'].includes(estado)) {
+          showError('cama', 'La cama seleccionada no está disponible.');
+          errores++;
+        }
+      }
+
+      if (errores > 0) {
+        e.preventDefault();
+      }
+    });
+
+    function showError(id, mensaje) {
+      document.getElementById(`error-${id}`).textContent = mensaje;
+    }
+
+    function clearError(id) {
+      document.getElementById(`error-${id}`).textContent = '';
+    }
+
+    document.getElementById('id_paciente').addEventListener('change', () => clearError('paciente'));
+    document.getElementById('id_motivo').addEventListener('change', () => clearError('motivo'));
+    document.getElementById('fecha_ingreso').addEventListener('input', () => clearError('fecha'));

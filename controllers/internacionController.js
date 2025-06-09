@@ -4,6 +4,7 @@ const Habitacion = require('../models/HabitacionModel');
 const Cama = require('../models/CamaModel');
 const Ala = require('../models/AlaModel');
 const MotivoInternacion = require('../models/MotivoInternacionModel');
+const Admisiones = require('../models/AdmisionModel');  
 const { Op } = require('sequelize');
 
 module.exports = {
@@ -15,24 +16,14 @@ module.exports = {
       const camas = await Cama.findAll();
       const motivos = await MotivoInternacion.findAll();
 
-      const diagnosticos = [
-        'Neumonía',
-        'Fractura',
-        'Apendicitis',
-        'COVID-19',
-        'Infarto',
-        'Gripe',
-        'Dolor abdominal',
-        'Cirugía programada'
-      ];
-
       res.render('internacion', {
         pacientes,
         alas,
         habitaciones,
         camas,
         motivos,
-        diagnosticos
+        datosPrevios: {},
+        error: null
       });
     } catch (error) {
       console.error(error);
@@ -42,9 +33,25 @@ module.exports = {
 
   async crearInternacion(req, res) {
     try {
-      const { id_paciente, fecha_ingreso, diagnostico, id_habitacion, id_motivo, id_cama } = req.body;
+      const { id_paciente, fecha_ingreso, id_habitacion, id_motivo, id_cama } = req.body;
 
       const paciente = await Paciente.findByPk(id_paciente);
+
+      // Verificar que el paciente tenga una admisión activa
+      const admisionActiva = await Admisiones.findOne({
+        where: {
+          id_paciente,
+          estado: 'Activo'
+        }
+      });
+
+      if (!admisionActiva) {
+        return await module.exports.renderFormularioConError(
+          res,
+          req.body,
+          'El paciente no tiene una admisión activa.'
+        );
+      }
 
       // Verificar conflicto de género
       const internados = await Internacion.findAll({
@@ -52,36 +59,50 @@ module.exports = {
           id_habitacion,
           estado: 'Activa'
         },
-        include: [{ model: Paciente, attributes: ['genero'] }]
+        include: [{ model: Paciente, as: 'Paciente', attributes: ['genero'] }]
       });
 
-      const conflictoGenero = internados.some(i => i.Paciente.genero !== paciente.genero);
+      const conflictoGenero =
+        internados.length > 0 &&
+        internados.some(i => i.Paciente.genero !== paciente.genero);
+
       if (conflictoGenero) {
-        return res.status(400).send('No se puede internar un paciente de género diferente en esta habitación.');
+        return await module.exports.renderFormularioConError(
+          res,
+          req.body,
+          'No se puede internar un paciente de género diferente en esta habitación.'
+        );
       }
 
-      // Verificar que la cama seleccionada esté disponible
+      // Verificar que la cama esté disponible y pertenezca a la habitación
       const cama = await Cama.findByPk(id_cama);
-
       if (!cama || cama.id_habitacion != id_habitacion) {
-        return res.status(400).send('La cama seleccionada no pertenece a la habitación elegida.');
+        return await module.exports.renderFormularioConError(
+          res,
+          req.body,
+          'La cama seleccionada no pertenece a la habitación elegida.'
+        );
       }
 
-      if (!['Libre', 'Higienizada'].includes(cama.estado)) {
-        return res.status(400).send('La cama seleccionada no está disponible.');
+      if (!['Libre', 'Higienizada', 'Disponible'].includes(cama.estado)) {
+        return await module.exports.renderFormularioConError(
+          res,
+          req.body,
+          'La cama seleccionada no está disponible.'
+        );
       }
 
       // Crear la internación
       await Internacion.create({
         fecha_ingreso,
-        diagnostico,
         estado: 'Activa',
         id_paciente,
         id_habitacion,
-        id_motivo: id_motivo || null
+        id_motivo: id_motivo || null,
+        id_cama
       });
 
-      // Cambiar el estado de la cama a "Ocupada"
+      // Cambiar estado de la cama a Ocupada
       await cama.update({ estado: 'Ocupada' });
 
       res.redirect('/internacion/listado');
@@ -101,17 +122,21 @@ module.exports = {
             attributes: ['nombre', 'apellido', 'dni', 'genero']
           },
           {
-            model: Habitacion,
-            attributes: ['numero'],
+            model: Cama,
+            as: 'Cama',
+            attributes: ['numero', 'estado'],
             include: [
               {
-                model: Ala,
-                as: 'ala',
-                attributes: ['nombre']
-              },
-              {
-                model: Cama,
-                attributes: ['numero', 'estado']
+                model: Habitacion,
+                as: 'Habitacion',
+                attributes: ['numero'],
+                include: [
+                  {
+                    model: Ala,
+                    as: 'Ala',
+                    attributes: ['nombre']
+                  }
+                ]
               }
             ]
           },
@@ -129,5 +154,23 @@ module.exports = {
       console.error(error);
       res.status(500).send('Error al obtener el listado de internaciones');
     }
+  },
+
+  async renderFormularioConError(res, datosPrevios, error) {
+    const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
+    const alas = await Ala.findAll();
+    const habitaciones = await Habitacion.findAll();
+    const camas = await Cama.findAll();
+    const motivos = await MotivoInternacion.findAll();
+
+    res.render('internacion', {
+      pacientes,
+      alas,
+      habitaciones,
+      camas,
+      motivos,
+      datosPrevios,
+      error
+    });
   }
 };

@@ -49,7 +49,7 @@ block content
             td= paciente.edad
             td= paciente.genero
             td= paciente.telefono
-            td= paciente.nombreObraSocial
+            td= paciente.obraSocial ? paciente.obraSocial.nombre : 'No Posee'
             td
               button.btn(
                 class=paciente.estado === 'Activo' ? 'btn-success' : 'btn-secondary',
@@ -65,35 +65,42 @@ block content
           .modal-header
             h5.modal-title Nuevo Paciente
             button.btn-close(type='button', data-bs-dismiss='modal')
-          form(action='/pacientes', method='POST')
+          form(action='/pacientes', method='POST', id='formPaciente', novalidate)
             .modal-body
               .row
                 .col-md-6
                   label.form-label Nombre
-                  input.form-control(type='text', name='nombre', required)
+                  input.form-control(type='text', name='nombre', required pattern='^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$')
+                  div.text-danger.d-none Nombre inválido. Solo letras.
                 .col-md-6
                   label.form-label Apellido
-                  input.form-control(type='text', name='apellido', required)
+                  input.form-control(type='text', name='apellido', required pattern='^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$')
+                  div.text-danger.d-none Apellido inválido. Solo letras.
               .row.mt-2
                 .col-md-4
                   label.form-label DNI
-                  input.form-control(type='text', name='dni', required)
+                  input.form-control(type='text', name='dni', required pattern='^[0-9]+$')
+                  div.text-danger.d-none DNI inválido. Solo números.
                 .col-md-4
                   label.form-label Género
                   select.form-select(name='genero', required)
                     option(value='') Seleccionar
                     option(value='Masculino') Masculino
                     option(value='Femenino') Femenino
+                  div.text-danger.d-none Seleccione un género.
                 .col-md-4
                   label.form-label Fecha de Nacimiento
-                  input.form-control(type='date', name='fecha_nacimiento', required)
+                  input.form-control(type='date', name='fecha_nacimiento', required, max='')
+                  div.text-danger.d-none Fecha no puede ser futura.
               .row.mt-2
                 .col-md-4
                   label.form-label Altura (cm)
-                  input.form-control(type='number', name='altura')
+                  input.form-control(type='number', name='altura', min='0')
+                  div.text-danger.d-none Altura inválida. No puede ser negativa.
                 .col-md-4
                   label.form-label Peso (kg)
-                  input.form-control(type='number', name='peso')
+                  input.form-control(type='number', name='peso', min='0')
+                  div.text-danger.d-none Peso inválido. No puede ser negativo.
                 .col-md-4
                   label.form-label Teléfono
                   input.form-control(type='text', name='telefono')
@@ -129,22 +136,54 @@ block content
           button.btn-close(type='button', data-bs-dismiss='toast')
         .toast-body#toastBody
 
-  // Scripts
   script(src='https://code.jquery.com/jquery-3.6.0.min.js')
   script(src='https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js')
   script(src='https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js')
 
   script.
-    $(document).ready(function () {
+    document.addEventListener('DOMContentLoaded', function () {
       $('#tablaPacientes').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
         responsive: true
       });
+
+      const form = document.getElementById('formPaciente');
+      const maxDate = new Date().toISOString().split('T')[0];
+      form.querySelector('input[name="fecha_nacimiento"]').max = maxDate;
+
+      form.addEventListener('submit', function (e) {
+        const inputs = form.querySelectorAll('input, select');
+        let valid = true;
+
+        inputs.forEach(input => {
+          const errorDiv = input.nextElementSibling;
+          if (errorDiv && errorDiv.classList.contains('text-danger')) {
+            if (!input.checkValidity()) {
+              errorDiv.classList.remove('d-none');
+              valid = false;
+            } else {
+              errorDiv.classList.add('d-none');
+            }
+          }
+        });
+
+        if (!valid) {
+          e.preventDefault();
+        }
+      });
+
+      // Modal auto-show
+      const abrir = !{abrirModalNuevoPaciente};
+      if (abrir) {
+        const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
+        modal.show();
+      }
+
+      actualizarContadores();
     });
 
-  script.
     function toggleEstado(id, button) {
       fetch(`/pacientes/${id}/toggle-estado`, { method: 'POST' })
         .then(response => response.json())
@@ -185,14 +224,3 @@ block content
       document.getElementById('totalFemenino').textContent = femenino;
       document.getElementById('totalMasculino').textContent = masculino;
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-      actualizarContadores();
-
-      // Abrir modal automáticamente si ?nuevo=1
-      const abrir = !{abrirModalNuevoPaciente};
-      if (abrir) {
-        const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
-        modal.show();
-      }
-    });

@@ -1,3 +1,5 @@
+
+// Funcion para calcular la edad dependiendo la fecha de nacimiento que se ingrese
 module.exports = function calcularEdad(fechaNacimiento) {
   const hoy = new Date();
   const nacimiento = new Date(fechaNacimiento);

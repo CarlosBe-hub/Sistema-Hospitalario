@@ -11,11 +11,12 @@ block content
           th DNI
           th Sexo
           th Fecha y Hora de Ingreso
-          th Diagnóstico
           th Motivo
-          th Habitación
           th Ala
+          th Habitación
+          th Cama
           th Estado Cama
+          th Género en la Cama
       tbody
         each internacion in internaciones
           tr
@@ -23,43 +24,44 @@ block content
             td= internacion.Paciente.dni
             td= internacion.Paciente.genero
 
-            - const fecha = new Date(internacion.fecha_ingreso);
-            - const fechaStr = fecha.toISOString().split('T')[0];
-            - const horaStr = fecha.toTimeString().split(' ')[0].slice(0,5);
-            td= `${fechaStr} ${horaStr}`
+            - var fecha = new Date(internacion.fecha_ingreso);
+            - var fechaStr = fecha.toISOString().split('T')[0];
+            - var horaStr = fecha.toTimeString().split(' ')[0].slice(0,5);
+            td= fechaStr + ' ' + horaStr
 
-            td= internacion.diagnostico
-
-            - const motivoDesc = internacion.MotivoInternacion && internacion.MotivoInternacion.descripcion ? internacion.MotivoInternacion.descripcion : '-'
+            - var motivoDesc = internacion.MotivoInternacion ? internacion.MotivoInternacion.descripcion : '-'
             td= motivoDesc
 
-            - const habitacionNumero = internacion.Habitacion && internacion.Habitacion.numero ? internacion.Habitacion.numero : 'N/D'
+            - var ala = (internacion.Cama && internacion.Cama.Habitacion && internacion.Cama.Habitacion.Ala) ? internacion.Cama.Habitacion.Ala.nombre : 'N/D'
+            td= ala
+
+            - var habitacionNumero = (internacion.Cama && internacion.Cama.Habitacion) ? internacion.Cama.Habitacion.numero : 'N/D'
             td= habitacionNumero
 
-            - const alaNombre = internacion.Habitacion && internacion.Habitacion.ala && internacion.Habitacion.ala.nombre ? internacion.Habitacion.ala.nombre : 'N/D'
-            td= alaNombre
+            - var camaNumero = internacion.Cama ? internacion.Cama.numero : 'N/D'
+            td= camaNumero
 
             td
-              - let cama = null
-              - if (internacion.Habitacion && internacion.Habitacion.Camas)
-              -   cama = internacion.Habitacion.Camas.find(c => ['Ocupada', 'Higienizada', 'Libre'].includes(c.estado))
-              if cama && cama.estado === 'Ocupada'
-                span.text-danger(title=`Cama ${cama.numero}`) 🛏️ Ocupada (Cama #{cama.numero})
-              else if cama && cama.estado === 'Higienizada'
-                span.text-warning(title=`Cama ${cama.numero}`) 🛏️ Higienizada (Cama #{cama.numero})
-              else if cama && cama.estado === 'Libre'
-                span.text-success(title=`Cama ${cama.numero}`) 🛏️ Libre (Cama #{cama.numero})
+              if internacion.Cama && internacion.Cama.estado === 'Ocupada'
+                span.text-danger 🛏️ Ocupada
+              else if internacion.Cama && internacion.Cama.estado === 'Higienizada'
+                span.text-warning 🛏️ Higienizada
+              else if internacion.Cama && internacion.Cama.estado === 'Libre'
+                span.text-success 🛏️ Libre
               else
-                span.text-muted N/D
+                span.text-muted 🛏️ N/D
 
-    hr
-    h5.mt-4 Leyenda:
-    p
-      span.text-success 🛏️ Libre
-      |  
-      span.text-warning 🛏️ Higienizada
-      |  
-      span.text-danger 🛏️ Ocupada
+            - var generoEnCama = internacion.Paciente ? internacion.Paciente.genero : 'N/D'
+            td= generoEnCama
+
+  hr
+  h5.mt-4 Leyenda:
+  p
+    span.text-success 🛏️ Libre
+    |  
+    span.text-warning 🛏️ Higienizada
+    |  
+    span.text-danger 🛏️ Ocupada
 
   //- CDN DataTables
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")

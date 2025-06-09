@@ -46,7 +46,7 @@ exports.guardarAdmision = async (req, res) => {
       return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
-    // Buscar si ya existe una admisión activa para ese paciente
+    // Validamos que no exista una admisión activa para este paciente
     const admisionActiva = await Admision.findOne({
       where: { id_paciente, estado: 'activo' }
     });
@@ -54,19 +54,33 @@ exports.guardarAdmision = async (req, res) => {
     if (admisionActiva) {
       return res.status(400).json({
         error: 'Este paciente ya tiene una admisión activa. El paciente está actualmente internado.',
-        admisionActiva: true // Añadimos esta propiedad
+        admisionActiva: true
       });
     }
 
-    // Crear la nueva admisión
-    await Admision.create({
+    // Guardar nueva admisión con estado "activo"
+    const nuevaAdmision = await Admision.create({
       id_paciente,
       fecha_admision,
       tipo_ingreso,
       estado: 'activo'
     });
 
-    res.status(200).json({ mensaje: 'Admision registrada correctamente.' });
+    const pacienteCompleto = await Paciente.findByPk(id_paciente);
+
+    res.status(200).json({
+      mensaje: 'Admision registrada correctamente.',
+      admision: {
+        id_admision: nuevaAdmision.id_admision,
+        fecha_admision: nuevaAdmision.fecha_admision,
+        tipo_ingreso: nuevaAdmision.tipo_ingreso,
+        estado: nuevaAdmision.estado,
+        paciente: {
+          nombre: pacienteCompleto.nombre,
+          apellido: pacienteCompleto.apellido
+        }
+      }
+    });
   } catch (error) {
     console.error('Error al guardar admisión:', error);
     res.status(500).json({ error: 'Error al guardar la admisión' });
@@ -79,8 +93,13 @@ exports.actualizarAdmision = async (req, res) => {
     const id_admision = req.params.id;
     const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
 
-    if (!id_paciente || !fecha_admision || !estado) {
+    if (!id_paciente || !fecha_admision || !tipo_ingreso || !estado) {
       return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos.' });
+    }
+
+    // Aseguramos que solo existen dos estados válidos: "activo" y "cancelado"
+    if (estado !== 'activo' && estado !== 'cancelado') {
+      return res.status(400).json({ error: 'El estado debe ser "activo" o "cancelado".' });
     }
 
     const paciente = await Paciente.findByPk(id_paciente);
@@ -96,11 +115,7 @@ exports.actualizarAdmision = async (req, res) => {
       return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
-    const estadosValidos = ['activo', 'finalizado', 'cancelado', 'en proceso...'];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ error: 'El estado ingresado no es válido.' });
-    }
-
+    // Si el estado es "activo", comprobamos que no haya otra admisión activa para el mismo paciente
     if (estado === 'activo') {
       const existente = await Admision.findOne({
         where: {
@@ -127,15 +142,18 @@ exports.actualizarAdmision = async (req, res) => {
   }
 };
 
-// Dar de baja admisión
+// Dar de baja admisión (cambiar estado a cancelado)
 exports.darDeBajaAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
 
-    await Admision.update(
-      { estado: 'cancelado' },
-      { where: { id_admision } }
-    );
+    const admision = await Admision.findByPk(id_admision);
+    if (!admision) {
+      return res.status(404).json({ error: 'Admision no encontrada.' });
+    }
+
+    // Cambiar estado a "cancelado"
+    await admision.update({ estado: 'cancelado' });
 
     res.status(200).json({ mensaje: 'Admision cancelada correctamente.' });
   } catch (error) {
@@ -159,14 +177,13 @@ exports.buscarPacientePorDNI = async (req, res) => {
       return res.status(404).json({ error: 'Paciente no encontrado' });
     }
 
-    // Verificar si el paciente tiene una admisión activa
     const admisionActiva = await Admision.findOne({
       where: { id_paciente: paciente.id_paciente, estado: 'activo' }
     });
 
     res.status(200).json({
       ...paciente.toJSON(),
-      admisionActiva: admisionActiva ? true : false
+      admisionActiva: !!admisionActiva
     });
   } catch (error) {
     console.error('Error al buscar paciente por DNI:', error);

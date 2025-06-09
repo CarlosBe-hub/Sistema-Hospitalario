@@ -17,10 +17,6 @@ Internacion.init({
     type: DataTypes.DATE,
     allowNull: true
   },
-  diagnostico: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
   estado: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -30,7 +26,8 @@ Internacion.init({
   },
   id_habitacion: DataTypes.INTEGER,
   id_paciente: DataTypes.INTEGER,
-  id_motivo: DataTypes.INTEGER
+  id_motivo: DataTypes.INTEGER,
+  id_cama: DataTypes.INTEGER
 }, {
   sequelize,
   modelName: 'Internacion',

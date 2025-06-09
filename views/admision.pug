@@ -24,6 +24,7 @@ block content
           td= admision.estado
           td
             button.btn.btn-sm.btn-warning(
+              type="button",
               data-bs-toggle="modal",
               data-bs-target="#modalEditarAdmision",
               data-id=admision.id_admision,
@@ -32,18 +33,25 @@ block content
               data-tipo=admision.tipo_ingreso,
               data-estado=admision.estado
             ) Editar
+            if admision.estado == 'activo'
+              button.btn.btn-sm.btn-danger(
+                type="button",
+                data-id=admision.id_admision,
+                onclick="cancelarAdmision(this)"
+              ) Cancelar
 
   // Modal nueva admisión
-  .modal.fade#modalAdmision(tabindex="-1")
+  .modal.fade#modalAdmision(tabindex="-1", aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
           h5.modal-title Nueva Admisión
-          button.btn-close(type="button", data-bs-dismiss="modal")
-        form(action="/admision/guardar", method="POST")
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
+        form#formNuevaAdmision
           .modal-body
             div#mensajeError.alert.alert-danger(style="display:none")
-              | <strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.
+              strong ¡Error! 
+              | Este paciente ya tiene una admisión activa. El paciente está actualmente internado.
 
             div#mensajeBusqueda
 
@@ -78,15 +86,16 @@ block content
             button.btn.btn-primary(type="submit", id="btnGuardarAdmision", disabled) Guardar
 
   // Modal editar admisión
-  .modal.fade#modalEditarAdmision(tabindex="-1")
+  .modal.fade#modalEditarAdmision(tabindex="-1", aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
           h5.modal-title Editar Admisión
-          button.btn-close(type="button", data-bs-dismiss="modal")
-        form#formEditarAdmision(method="POST")
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
+        form#formEditarAdmision(method="POST", action="/admision/0")
           input(type="hidden", name="_method", value="PUT")
           input(type="hidden", name="id_admision", id="edit_id_admision")
+          input(type="hidden", name="id_paciente", id="edit_id_paciente")
 
           .modal-body
             .mb-3
@@ -105,23 +114,20 @@ block content
               label.form-label(for="edit_estado") Estado
               select.form-select(name="estado", id="edit_estado")
                 option(value="activo") Activo
-                option(value="finalizado") Finalizado
                 option(value="cancelado") Cancelado
-                option(value="en proceso...") En Proceso...
               div.text-danger.small#err_edit_estado
 
           .modal-footer
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
             button.btn.btn-primary(type="submit") Guardar cambios
 
-  // CSS y JS externos
+block scripts
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
 
-  // Script personalizado
   script.
-    $(document).ready(function() {
+    $(document).ready(function () {
       $('#tablaAdmisiones').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
@@ -141,12 +147,30 @@ block content
         return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
       }
 
-      $('#tablaAdmisiones tbody tr').each(function() {
+      $('#tablaAdmisiones tbody tr').each(function () {
         const $celdaFecha = $(this).find('td').eq(2);
         const fechaTexto = $celdaFecha.text().trim();
         const fechaFormateada = formatearFecha(fechaTexto);
         $celdaFecha.text(fechaFormateada);
       });
+
+      // Definir la función cancelarAdmision
+      window.cancelarAdmision = function(button) {
+        const idAdmision = $(button).data('id');  // Obtener el ID de la admisión desde el botón
+        if (confirm("¿Estás seguro de que deseas cancelar esta admisión?")) {
+          $.ajax({
+            url: `/admision/${idAdmision}/cancelar`,  // La URL del backend
+            method: 'PUT',  // Usamos PUT para cambiar el estado
+            success: function(res) {
+              alert('Admision cancelada correctamente');
+              location.reload();  // Recargar la página para actualizar la tabla
+            },
+            error: function(xhr, status, error) {
+              alert('Error al cancelar la admisión');
+            }
+          });
+        }
+      }
 
       $('#modalEditarAdmision').on('show.bs.modal', function (event) {
         const button = $(event.relatedTarget);
@@ -154,114 +178,15 @@ block content
         const fecha = button.data('fecha');
         const tipo = button.data('tipo');
         const estado = button.data('estado');
+        const pacienteId = button.data('paciente');
 
         const modal = $(this);
         modal.find('#edit_id_admision').val(idAdmision);
         modal.find('#edit_fecha_admision').val(fecha);
         modal.find('#edit_tipo_ingreso').val(tipo);
         modal.find('#edit_estado').val(estado);
+        modal.find('#edit_id_paciente').val(pacienteId);
 
-        const form = modal.find('#formEditarAdmision');
-        form.attr('action', `/admision/${idAdmision}?_method=PUT`);
-      });
-
-      function mostrarMensaje(tipo, texto) {
-        const mensaje = document.getElementById('mensajeBusqueda');
-        mensaje.innerHTML = `
-          <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
-            ${texto}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-          </div>
-        `;
-      }
-
-      document.getElementById('btnBuscarDNI').addEventListener('click', async () => {
-        const dni = document.getElementById('buscar_dni').value.trim();
-        const errorDiv = document.getElementById('err_dni');
-        const select = document.getElementById('id_paciente');
-        const btnGuardar = document.getElementById('btnGuardarAdmision');
-        const mensajeError = document.getElementById('mensajeError');
-
-        errorDiv.textContent = '';
-        select.innerHTML = '<option value="">-- Selecciona un paciente --</option>';
-        select.disabled = true;
-        btnGuardar.disabled = true;
-        mensajeError.style.display = 'none';
-
-        if (!dni || dni.length < 6) {
-          errorDiv.textContent = 'Ingrese un DNI válido.';
-          return;
-        }
-
-        try {
-          const res = await fetch(`/admision/buscar-paciente/${dni}`);
-          if (!res.ok) throw await res.json();
-
-          const paciente = await res.json();
-
-          if (paciente.admisionActiva) {
-            mensajeError.style.display = 'block';
-            mensajeError.innerHTML = `<strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.`;
-            return;
-          }
-
-          const option = document.createElement('option');
-          option.value = paciente.id_paciente;
-          option.textContent = `${paciente.nombre} ${paciente.apellido}`;
-          select.appendChild(option);
-          select.disabled = false;
-          select.value = paciente.id_paciente;
-          btnGuardar.disabled = false;
-
-          mostrarMensaje('success', `✅ Paciente encontrado: ${paciente.nombre} ${paciente.apellido}`);
-        } catch (err) {
-          mostrarMensaje('warning', `⚠️ Paciente no registrado. ¿Deseas <a href="/pacientes?nuevo=1&dni=${dni}" class="alert-link">crear uno nuevo?</a>`);
-        }
-      });
-
-      function validarFormularioAdmision() {
-        const dni = $('#buscar_dni').val().trim();
-        const paciente = $('#id_paciente').val();
-        const fechaAdmision = $('#fecha_admision').val();
-        const tipoIngreso = $('#tipo_ingreso').val();
-        let valido = true;
-
-        if (!dni || dni.length < 6) {
-          $('#err_dni').text('Ingrese un DNI válido.');
-          valido = false;
-        } else {
-          $('#err_dni').text('');
-        }
-
-        if (!paciente) {
-          $('#err_paciente').text('Seleccione un paciente.');
-          valido = false;
-        } else {
-          $('#err_paciente').text('');
-        }
-
-        if (!fechaAdmision) {
-          $('#err_fecha').text('La fecha de admisión es obligatoria.');
-          valido = false;
-        } else {
-          $('#err_fecha').text('');
-        }
-
-        if (!tipoIngreso) {
-          $('#err_tipo').text('Seleccione un tipo de ingreso.');
-          valido = false;
-        } else {
-          $('#err_tipo').text('');
-        }
-
-        return valido;
-      }
-
-      $('form[action="/admision/guardar"]').on('submit', function (e) {
-        e.preventDefault();
-
-        if (validarFormularioAdmision()) {
-          this.submit();
-        }
+        modal.find('form').attr('action', `/admision/${idAdmision}?_method=PUT`);
       });
     });

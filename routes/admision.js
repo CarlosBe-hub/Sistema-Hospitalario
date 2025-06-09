@@ -5,14 +5,14 @@ const admisionController = require('../controllers/admisionController');
 // Mostrar vista principal con tabla + modal
 router.get('/', admisionController.vistaListado);
 
-// Guardar nueva admisión (desde el modal)
+// Guardar nueva admisión (POST desde el formulario)
 router.post('/guardar', admisionController.guardarAdmision);
 
-// Ruta PUT para actualizar admisión
+// Actualizar admisión (PUT desde formulario con _method=PUT)
 router.put('/:id', admisionController.actualizarAdmision);
 
-// Dar de baja (cambiar estado a "cancelado")
-router.post('/baja/:id', admisionController.darDeBajaAdmision);
+// Dar de baja una admisión (cambiar estado a cancelado)
+router.put('/:id/cancelar', admisionController.darDeBajaAdmision);
 
 // Buscar paciente por DNI (AJAX)
 router.get('/buscar-paciente/:dni', admisionController.buscarPacientePorDNI);

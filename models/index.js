@@ -21,10 +21,10 @@ const ObraSocial = require('./ObraSocialModel');
 const Paciente = require('./PacienteModel');
 const SignosVitales = require('./SignosVitalesModel');
 
-
-// Paciente
+// ─────────────────────────────────────────────
+// PACIENTE RELACIONES
 Paciente.hasMany(Internacion, { foreignKey: 'id_paciente' });
-Internacion.belongsTo(Paciente, { foreignKey: 'id_paciente' });
+Internacion.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'Paciente' });
 
 Paciente.hasMany(ContactoEmergencia, { foreignKey: 'id_paciente' });
 ContactoEmergencia.belongsTo(Paciente, { foreignKey: 'id_paciente' });
@@ -41,7 +41,6 @@ CuidadosEnfermeria.belongsTo(Paciente, { foreignKey: 'id_paciente' });
 Paciente.hasMany(Admision, { foreignKey: 'id_paciente' });
 Admision.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'paciente' });
 
-// 🔧 RELACIÓN QUE FALTABA: Paciente - ObraSocial
 Paciente.belongsTo(ObraSocial, {
   foreignKey: 'id_obra_social',
   as: 'obraSocial'
@@ -51,8 +50,9 @@ ObraSocial.hasMany(Paciente, {
   as: 'pacientes'
 });
 
-// Internacion
-Internacion.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
+// ─────────────────────────────────────────────
+// INTERNACION RELACIONES
+Internacion.belongsTo(Habitacion, { foreignKey: 'id_habitacion', as: 'Habitacion' });
 Habitacion.hasMany(Internacion, { foreignKey: 'id_habitacion' });
 
 Internacion.belongsTo(MotivoInternacion, { foreignKey: 'id_motivo', as: 'MotivoInternacion' });
@@ -70,16 +70,22 @@ CuidadosEnfermeria.belongsTo(Internacion, { foreignKey: 'id_internacion' });
 Internacion.hasMany(SignosVitales, { foreignKey: 'id_internacion' });
 SignosVitales.belongsTo(Internacion, { foreignKey: 'id_internacion' });
 
-// Habitacion
+Internacion.belongsTo(Cama, { foreignKey: 'id_cama', as: 'Cama' });
+Cama.hasOne(Internacion, { foreignKey: 'id_cama', as: 'Internacion' });
+
+// ─────────────────────────────────────────────
+// HABITACION Y ALA
+Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'Ala' });
 Ala.hasMany(Habitacion, { foreignKey: 'id_ala' });
 
 Habitacion.hasMany(Cama, { foreignKey: 'id_habitacion' });
-Cama.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
+Cama.belongsTo(Habitacion, { foreignKey: 'id_habitacion', as: 'Habitacion' });
 
 Habitacion.hasMany(Admision, { foreignKey: 'id_habitacion' });
 Admision.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
 
-// Medico
+// ─────────────────────────────────────────────
+// MEDICO Y ESPECIALIZACION
 Diagnostico.belongsTo(Medico, { foreignKey: 'id_medico' });
 Medico.hasMany(Diagnostico, { foreignKey: 'id_medico' });
 
@@ -89,14 +95,16 @@ Medico.hasMany(HistorialMedico, { foreignKey: 'id_medico' });
 Medico.belongsTo(Especializacion, { foreignKey: 'id_especializacion' });
 Especializacion.hasMany(Medico, { foreignKey: 'id_especializacion' });
 
-// Enfermero
+// ─────────────────────────────────────────────
+// ENFERMERO
 SignosVitales.belongsTo(Enfermero, { foreignKey: 'id_enfermero' });
 Enfermero.hasMany(SignosVitales, { foreignKey: 'id_enfermero' });
 
 CuidadosEnfermeria.belongsTo(Enfermero, { foreignKey: 'id_enfermero' });
 Enfermero.hasMany(CuidadosEnfermeria, { foreignKey: 'id_enfermero' });
 
-// Exportar modelos y conexión
+// ─────────────────────────────────────────────
+// EXPORTAR
 module.exports = {
   sequelize,
   Sequelize,
