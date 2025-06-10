@@ -4,9 +4,8 @@ const Habitacion = require('../models/HabitacionModel');
 const Cama = require('../models/CamaModel');
 const Ala = require('../models/AlaModel');
 const MotivoInternacion = require('../models/MotivoInternacionModel');
-const Admisiones = require('../models/AdmisionModel');  
+const Admisiones = require('../models/AdmisionModel');
 const { Op } = require('sequelize');
-
 
 module.exports = {
   async formNuevaInternacion(req, res) {
@@ -39,8 +38,6 @@ module.exports = {
       res.status(500).send('Error al cargar el formulario de internación');
     }
   },
-
-
 
   async crearInternacion(req, res) {
     try {
@@ -100,6 +97,38 @@ module.exports = {
           res,
           req.body,
           'La cama seleccionada no está disponible.'
+        );
+      }
+
+      // Verificar si el paciente ya tiene una internación activa
+      const internacionActiva = await Internacion.findOne({
+        where: {
+          id_paciente,
+          estado: 'Activa'
+        },
+        include: [{
+          model: Cama,
+          as: 'Cama',
+          include: [{
+            model: Habitacion,
+            as: 'Habitacion',
+            include: [{ model: Ala, as: 'Ala' }]
+          }]
+        }]
+      });
+
+      if (internacionActiva) {
+        const camaActual = internacionActiva.Cama;
+        const habitacion = camaActual?.Habitacion;
+        const ala = habitacion?.Ala;
+        const fecha = new Date(internacionActiva.fecha_ingreso).toLocaleDateString();
+
+        const mensaje = `El paciente ya se encuentra internado desde el ${fecha} en la cama ${camaActual?.numero}, habitación ${habitacion?.numero}, ala ${ala?.nombre}.`;
+
+        return await module.exports.renderFormularioConError(
+          res,
+          req.body,
+          mensaje
         );
       }
 
@@ -168,7 +197,15 @@ module.exports = {
   },
 
   async renderFormularioConError(res, datosPrevios, error) {
-    const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
+    const pacientes = await Paciente.findAll({
+      where: { estado: 'Activo' },
+      include: [{
+        model: Admisiones,
+        where: { estado: 'activo' },
+        required: true
+      }]
+    });
+
     const alas = await Ala.findAll();
     const habitaciones = await Habitacion.findAll();
     const camas = await Cama.findAll();
