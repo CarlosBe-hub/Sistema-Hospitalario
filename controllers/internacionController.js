@@ -7,10 +7,19 @@ const MotivoInternacion = require('../models/MotivoInternacionModel');
 const Admisiones = require('../models/AdmisionModel');  
 const { Op } = require('sequelize');
 
+
 module.exports = {
   async formNuevaInternacion(req, res) {
     try {
-      const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
+      const pacientes = await Paciente.findAll({
+        where: { estado: 'Activo' },
+        include: [{
+          model: Admisiones,
+          where: { estado: 'activo' },
+          required: true
+        }]
+      });
+
       const alas = await Ala.findAll();
       const habitaciones = await Habitacion.findAll();
       const camas = await Cama.findAll();
@@ -30,6 +39,8 @@ module.exports = {
       res.status(500).send('Error al cargar el formulario de internación');
     }
   },
+
+
 
   async crearInternacion(req, res) {
     try {

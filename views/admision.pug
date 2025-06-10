@@ -70,7 +70,7 @@ block content
 
             .mb-3
               label.form-label(for="fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="fecha_admision")
+              input.form-control(type="datetime-local", name="fecha_admision", id="fecha_admision", step="60")
               div.text-danger.small#err_fecha
 
             .mb-3
@@ -100,7 +100,7 @@ block content
           .modal-body
             .mb-3
               label.form-label(for="edit_fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision")
+              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision", step="60")
               div.text-danger.small#err_edit_fecha
 
             .mb-3
@@ -154,31 +154,92 @@ block scripts
         $celdaFecha.text(fechaFormateada);
       });
 
-      // Definir la función cancelarAdmision
-      window.cancelarAdmision = function(button) {
-        const idAdmision = $(button).data('id');  // Obtener el ID de la admisión desde el botón
+      // NUEVO: Handler del botón Buscar DNI
+      $('#btnBuscarDNI').click(function () {
+        const dni = $('#buscar_dni').val().trim();
+        const $mensajeError = $('#mensajeError');
+        const $mensajeBusqueda = $('#mensajeBusqueda');
+        const $selectPaciente = $('#id_paciente');
+
+        $mensajeError.hide();
+        $mensajeBusqueda.html('');
+        $selectPaciente.empty().append('<option value="">-- Selecciona un paciente --</option>');
+        $('#btnGuardarAdmision').prop('disabled', true);
+
+        if (dni.length < 6) {
+          $('#err_dni').text('Debe ingresar un DNI válido.');
+          return;
+        } else {
+          $('#err_dni').text('');
+        }
+
+        $.ajax({
+          url: `/admision/buscar-paciente/${dni}`,
+          method: 'GET',
+          success: function (data) {
+            if (data.admisionActiva) {
+              $mensajeError.show();
+              $selectPaciente.prop('disabled', true);
+            } else {
+              $mensajeError.hide();
+              $mensajeBusqueda.html(`<div class="alert alert-success">Paciente encontrado: <strong>${data.nombre} ${data.apellido}</strong></div>`);
+              $selectPaciente
+                .append(`<option value="${data.id_paciente}" selected>${data.nombre} ${data.apellido}</option>`)
+                .prop('disabled', false);
+              $('#btnGuardarAdmision').prop('disabled', false);
+            }
+          },
+          error: function (xhr) {
+            if (xhr.status === 404) {
+              $mensajeBusqueda.html('<div class="alert alert-warning">Paciente no encontrado.</div>');
+            } else {
+              $mensajeBusqueda.html('<div class="alert alert-danger">Error al buscar el paciente.</div>');
+            }
+          }
+        });
+      });
+
+      // Opcional: buscar al presionar Enter
+      $('#buscar_dni').keypress(function (e) {
+        if (e.which == 13) {
+          $('#btnBuscarDNI').click();
+        }
+      });
+
+      // Cancelar admisión
+      window.cancelarAdmision = function (button) {
+        const idAdmision = $(button).data('id');
         if (confirm("¿Estás seguro de que deseas cancelar esta admisión?")) {
           $.ajax({
-            url: `/admision/${idAdmision}/cancelar`,  // La URL del backend
-            method: 'PUT',  // Usamos PUT para cambiar el estado
-            success: function(res) {
+            url: `/admision/${idAdmision}/cancelar`,
+            method: 'PUT',
+            success: function (res) {
               alert('Admision cancelada correctamente');
-              location.reload();  // Recargar la página para actualizar la tabla
+              location.reload();
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
               alert('Error al cancelar la admisión');
             }
           });
         }
       }
 
+      // Cargar datos en modal de edición
       $('#modalEditarAdmision').on('show.bs.modal', function (event) {
         const button = $(event.relatedTarget);
         const idAdmision = button.data('id');
-        const fecha = button.data('fecha');
+        let fecha = button.data('fecha');
         const tipo = button.data('tipo');
         const estado = button.data('estado');
         const pacienteId = button.data('paciente');
+
+        // Convertir fecha a formato compatible con datetime-local
+        if (fecha) {
+          const dt = new Date(fecha);
+          const pad = (n) => n.toString().padStart(2, '0');
+          const formatted = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+          fecha = formatted;
+        }
 
         const modal = $(this);
         modal.find('#edit_id_admision').val(idAdmision);
@@ -188,5 +249,60 @@ block scripts
         modal.find('#edit_id_paciente').val(pacienteId);
 
         modal.find('form').attr('action', `/admision/${idAdmision}?_method=PUT`);
+      });
+
+      // AJAX para guardar nueva admisión
+      $('#formNuevaAdmision').submit(function (e) {
+        e.preventDefault();
+
+        // Limpiar errores previos
+        $('#err_paciente, #err_fecha, #err_tipo').text('');
+        $('#mensajeError').hide();
+
+        const data = {
+          id_paciente: $('#id_paciente').val(),
+          fecha_admision: $('#fecha_admision').val(),
+          tipo_ingreso: $('#tipo_ingreso').val()
+        };
+
+        // Validación simple cliente
+        let hayError = false;
+        if (!data.id_paciente) {
+          $('#err_paciente').text('Debe seleccionar un paciente.');
+          hayError = true;
+        }
+        if (!data.fecha_admision) {
+          $('#err_fecha').text('Debe ingresar la fecha de admisión.');
+          hayError = true;
+        }
+        if (!data.tipo_ingreso) {
+          $('#err_tipo').text('Debe seleccionar un tipo de ingreso.');
+          hayError = true;
+        }
+        if (hayError) return;
+
+        $.ajax({
+          url: '/admision/guardar',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function (res) {
+            //alert(res.mensaje);
+            $('#modalAdmision').modal('hide');
+            location.reload();
+          },
+          error: function (xhr) {
+            if (xhr.status === 400 && xhr.responseJSON) {
+              const err = xhr.responseJSON;
+              if (err.admisionActiva) {
+                $('#mensajeError').show();
+              } else if (err.error) {
+                alert('Error: ' + err.error);
+              }
+            } else {
+              alert('Error al guardar la admisión.');
+            }
+          }
+        });
       });
     });

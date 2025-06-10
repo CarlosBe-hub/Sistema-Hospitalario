@@ -165,13 +165,26 @@ exports.darDeBajaAdmision = async (req, res) => {
 // Buscar paciente por DNI
 exports.buscarPacientePorDNI = async (req, res) => {
   try {
-    const { dni } = req.params;
+    let { dni } = req.params;
+    console.log('DNI recibido:', dni);
 
     if (!dni || dni.length < 6) {
       return res.status(400).json({ error: 'DNI inválido' });
     }
 
-    const paciente = await Paciente.findOne({ where: { dni } });
+    dni = dni.trim();
+    console.log('DNI limpio:', dni);
+
+    // Búsqueda flexible para evitar problemas de formato
+    const paciente = await Paciente.findOne({
+      where: {
+        dni: {
+          [Op.like]: `%${dni}%`
+        }
+      }
+    });
+
+    console.log('Paciente encontrado:', paciente);
 
     if (!paciente) {
       return res.status(404).json({ error: 'Paciente no encontrado' });
