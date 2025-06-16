@@ -76,7 +76,7 @@ Cama.hasOne(Internacion, { foreignKey: 'id_cama', as: 'Internacion' });
 
 // ─────────────────────────────────────────────
 // HABITACION Y ALA
-Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'ala' });
+Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'Ala' });
 Ala.hasMany(Habitacion, { foreignKey: 'id_ala' });
 
 Habitacion.hasMany(Cama, { foreignKey: 'id_habitacion' });

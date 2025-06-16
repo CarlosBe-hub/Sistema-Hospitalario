@@ -182,7 +182,7 @@ module.exports = {
                 include: [
                   {
                     model: Ala,
-                    as: "ala",
+                    as: "Ala",
                     attributes: ["nombre"],
                   },
                 ],

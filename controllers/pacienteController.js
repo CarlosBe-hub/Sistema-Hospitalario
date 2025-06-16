@@ -22,12 +22,10 @@ const verActivos = async (req, res) => {
       };
     });
 
-    const abrirModalNuevoPaciente = req.query.nuevo === '1';
-
     res.render('pacientes', {
       pacientes: pacientesProcesados,
       obrasSociales,
-      abrirModalNuevoPaciente
+      query: req.query
     });
   } catch (error) {
     console.error('Error al cargar pacientes activos:', error);
@@ -56,8 +54,7 @@ const crearPaciente = async (req, res) => {
     const pacienteExistente = await Paciente.findOne({ where: { dni: dni.trim() } });
 
     if (pacienteExistente) {
-      // Evitar crear y devolver error
-      return res.status(409).send('Error: Ya existe un paciente con ese DNI');
+      return res.redirect('/pacientes?nuevo=1&error=dni');
     }
 
     const idObraSocial =
@@ -80,12 +77,14 @@ const crearPaciente = async (req, res) => {
       id_obra_social: idObraSocial
     });
 
+    // Redirigir sin error pero con abrir modal para limpiar form 
     res.redirect('/pacientes?nuevo=1');
   } catch (error) {
     console.error('Error al crear paciente:', error);
     res.status(500).send('Error al crear paciente');
   }
 };
+
 
 const obtenerTodosPacientes = async (req, res) => {
   try {
@@ -173,14 +172,14 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-// Nueva función para validar si un DNI ya existe
+// Validar si un DNI ya existe 
 const validarDNI = async (req, res) => {
   try {
     const { dni } = req.params;
     if (!dni || dni.length < 6) {
       return res.status(400).json({ error: 'DNI inválido' });
     }
-    
+
     const pacienteExistente = await Paciente.findOne({ where: { dni: dni.trim() } });
 
     if (pacienteExistente) {

@@ -78,9 +78,18 @@ block content
                   div.text-danger.d-none Apellido inválido. Solo letras.
               .row.mt-2
                 .col-md-4
-                  label.form-label DNI
-                  input.form-control(type='text', name='dni', required pattern='^[0-9]+$')
+                  label.form-label(for="dni") DNI
+                  input.form-control(
+                    type='text', 
+                    name='dni', 
+                    id='dni', 
+                    required, 
+                    pattern='^[0-9]+$', 
+                    value=(query.dni || '')
+                  )
                   div.text-danger.d-none DNI inválido. Solo números.
+                  if query.error === 'dni'
+                    small.text-danger(style="font-weight: bold") Ya existe un paciente con ese DNI.
                 .col-md-4
                   label.form-label Género
                   select.form-select(name='genero', required)
@@ -174,13 +183,11 @@ block content
         }
       });
 
-      // Mostrar modal si el query string tiene abrirModal=1
       const params = new URLSearchParams(window.location.search);
-      const abrir = params.get('abrirModal') === '1';
+      const abrir = params.get('abrirModal') === '1' || params.get('error') === 'dni';
       if (abrir) {
         const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
         modal.show();
-        // Opcional: limpiar el parámetro de la URL sin recargar la página
         window.history.replaceState({}, document.title, "/pacientes");
       }
 
