@@ -17,4 +17,7 @@ router.post('/', PacienteController.crearPaciente);
 // Ruta para listar
 router.get('/', PacienteController.verActivos);
 
+// Ruta para validar si el DNI ya existe
+router.get('/validar-dni/:dni', PacienteController.validarDNI);
+
 module.exports = router;

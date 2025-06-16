@@ -33,10 +33,4 @@ Habitacion.init({
   timestamps: false
 });
 
-// Relación: una habitación pertenece a un ala
-Habitacion.belongsTo(Ala, {
-  foreignKey: 'id_ala',
-  as: 'ala'
-});
-
 module.exports = Habitacion;

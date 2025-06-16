@@ -1,4 +1,4 @@
-const { Paciente, Admision } = require('../models');
+const { Paciente, Admision, MotivoAdmision } = require('../models');
 const { Op } = require('sequelize');
 
 // Mostrar tabla de admisiones + modal
@@ -6,7 +6,10 @@ exports.vistaListado = async (req, res) => {
   try {
     const pacientes = await Paciente.findAll();
     const admisiones = await Admision.findAll({
-      include: [{ model: Paciente, as: 'paciente' }],
+      include: [
+        { model: Paciente, as: 'paciente' },
+        { model: MotivoAdmision, as: 'motivo_admision' }
+      ],
       order: [['fecha_admision', 'DESC']]
     });
 
@@ -17,7 +20,9 @@ exports.vistaListado = async (req, res) => {
         id_paciente: a.id_paciente
       }));
 
-    res.render('admision', { pacientes, admisiones, admisionesActivasJS });
+    const motivos = await MotivoAdmision.findAll();
+
+    res.render('admision', { pacientes, admisiones, admisionesActivasJS, motivos });
   } catch (error) {
     console.error('Error al mostrar admisiones:', error);
     res.status(500).json({ error: 'Error al cargar las admisiones' });
@@ -27,15 +32,25 @@ exports.vistaListado = async (req, res) => {
 // Guardar nueva admisión (cerrando la anterior si es necesario)
 exports.guardarAdmision = async (req, res) => {
   try {
-    const { id_paciente, fecha_admision, tipo_ingreso } = req.body;
+    const { id_paciente, fecha_admision, id_motivo } = req.body;
 
-    if (!id_paciente || !fecha_admision || !tipo_ingreso) {
+    if (!id_paciente || !fecha_admision || !id_motivo) {
       return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos.' });
     }
 
     const paciente = await Paciente.findByPk(id_paciente);
     if (!paciente) {
       return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
+    }
+
+    // Validar que paciente no esté inactivo
+    if (paciente.estado === 'inactivo') {
+      return res.status(400).json({ error: 'No se puede realizar la admisión. El paciente está inactivo.' });
+    }
+
+    const motivo = await MotivoAdmision.findByPk(id_motivo);
+    if (!motivo) {
+      return res.status(400).json({ error: 'El motivo de admisión no es válido.' });
     }
 
     const fecha = new Date(fecha_admision);
@@ -46,7 +61,6 @@ exports.guardarAdmision = async (req, res) => {
       return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
-    // Validamos que no exista una admisión activa para este paciente
     const admisionActiva = await Admision.findOne({
       where: { id_paciente, estado: 'activo' }
     });
@@ -58,11 +72,10 @@ exports.guardarAdmision = async (req, res) => {
       });
     }
 
-    // Guardar nueva admisión con estado "activo"
     const nuevaAdmision = await Admision.create({
       id_paciente,
       fecha_admision,
-      tipo_ingreso,
+      id_motivo,
       estado: 'activo'
     });
 
@@ -73,7 +86,7 @@ exports.guardarAdmision = async (req, res) => {
       admision: {
         id_admision: nuevaAdmision.id_admision,
         fecha_admision: nuevaAdmision.fecha_admision,
-        tipo_ingreso: nuevaAdmision.tipo_ingreso,
+        id_motivo: nuevaAdmision.id_motivo,
         estado: nuevaAdmision.estado,
         paciente: {
           nombre: pacienteCompleto.nombre,
@@ -87,17 +100,17 @@ exports.guardarAdmision = async (req, res) => {
   }
 };
 
+
 // Actualizar admisión existente
 exports.actualizarAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
-    const { id_paciente, fecha_admision, tipo_ingreso, estado } = req.body;
+    const { id_paciente, fecha_admision, id_motivo, estado } = req.body;
 
-    if (!id_paciente || !fecha_admision || !tipo_ingreso || !estado) {
+    if (!id_paciente || !fecha_admision || !id_motivo || !estado) {
       return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos.' });
     }
 
-    // Aseguramos que solo existen dos estados válidos: "activo" y "cancelado"
     if (estado !== 'activo' && estado !== 'cancelado') {
       return res.status(400).json({ error: 'El estado debe ser "activo" o "cancelado".' });
     }
@@ -105,6 +118,11 @@ exports.actualizarAdmision = async (req, res) => {
     const paciente = await Paciente.findByPk(id_paciente);
     if (!paciente) {
       return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
+    }
+
+    const motivo = await MotivoAdmision.findByPk(id_motivo);
+    if (!motivo) {
+      return res.status(400).json({ error: 'El motivo de admisión no es válido.' });
     }
 
     const fecha = new Date(fecha_admision);
@@ -115,7 +133,6 @@ exports.actualizarAdmision = async (req, res) => {
       return res.status(400).json({ error: 'La fecha de admisión no puede ser futura.' });
     }
 
-    // Si el estado es "activo", comprobamos que no haya otra admisión activa para el mismo paciente
     if (estado === 'activo') {
       const existente = await Admision.findOne({
         where: {
@@ -131,7 +148,7 @@ exports.actualizarAdmision = async (req, res) => {
     }
 
     await Admision.update(
-      { id_paciente, fecha_admision, tipo_ingreso, estado },
+      { id_paciente, fecha_admision, id_motivo, estado },
       { where: { id_admision } }
     );
 
@@ -152,7 +169,6 @@ exports.darDeBajaAdmision = async (req, res) => {
       return res.status(404).json({ error: 'Admision no encontrada.' });
     }
 
-    // Cambiar estado a "cancelado"
     await admision.update({ estado: 'cancelado' });
 
     res.status(200).json({ mensaje: 'Admision cancelada correctamente.' });
@@ -175,7 +191,6 @@ exports.buscarPacientePorDNI = async (req, res) => {
     dni = dni.trim();
     console.log('DNI limpio:', dni);
 
-    // Búsqueda flexible para evitar problemas de formato
     const paciente = await Paciente.findOne({
       where: {
         dni: {
@@ -196,10 +211,13 @@ exports.buscarPacientePorDNI = async (req, res) => {
 
     res.status(200).json({
       ...paciente.toJSON(),
-      admisionActiva: !!admisionActiva
+      admisionActiva: !!admisionActiva,
+      pacienteInactivo: paciente.estado === 'inactivo'
     });
   } catch (error) {
     console.error('Error al buscar paciente por DNI:', error);
     res.status(500).json({ error: 'Error al buscar paciente' });
   }
 };
+
+

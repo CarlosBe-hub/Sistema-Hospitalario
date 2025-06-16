@@ -174,11 +174,14 @@ block content
         }
       });
 
-      // Modal auto-show
-      const abrir = !{abrirModalNuevoPaciente};
+      // Mostrar modal si el query string tiene abrirModal=1
+      const params = new URLSearchParams(window.location.search);
+      const abrir = params.get('abrirModal') === '1';
       if (abrir) {
         const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
         modal.show();
+        // Opcional: limpiar el parámetro de la URL sin recargar la página
+        window.history.replaceState({}, document.title, "/pacientes");
       }
 
       actualizarContadores();

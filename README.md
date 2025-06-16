@@ -40,19 +40,6 @@ Antes de ejecutar el proyecto, asegúrate de tener instalados los siguientes com
 - **Node.js** y **npm** (Node Package Manager).
 - **MySQL** para gestionar la base de datos.
 
-## Configuración de las variables de entorno 🧪
-
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables de entorno para configurar la conexión a la base de datos:
-
-```bash
-DB_NAME=hospital
-DB_USER=root
-DB_PASS=admin
-DB_HOST=111.11.1
-DB_PORT=3306
-DB_DIALECT=mysql
-```
-
 ## Pasos para la instalacion y prueba del proyecto 📄
 
 1. Clona este repositorio:
@@ -68,7 +55,27 @@ DB_DIALECT=mysql
    npm install
    ```
 
-3. Crea la base de datos en MySQL usando las configuraciones del archivo `.env`
+## Configuración de las variables de entorno 🧪
+3. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables de entorno para configurar la conexión a la base de datos (Ejemplo):
+
+```bash
+DB_NAME=hospital
+DB_USER=root
+DB_PASS=contraseña
+DB_HOST=999.9.99
+DB_PORT=3306
+DB_DIALECT=mysql
+```
+
+4. Usa este comando para crear las tablas en la base de datos.
+   ```bash
+   node./config/dbsync.js
+   ```
+5. Puedes usar esta seed para cargar datos de prueba (opcional).
+
+   ```bash
+   node .\seeders\seed.js
+   ```
 
 ## Ejecución 🎇
 

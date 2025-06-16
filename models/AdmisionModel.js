@@ -13,13 +13,13 @@ Admision.init({
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  id_motivo: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   fecha_admision: {
     type: DataTypes.DATE,
     allowNull: false
-  },
-  tipo_ingreso: {
-    type: DataTypes.STRING,
-    allowNull: true
   },
   estado: {
     type: DataTypes.STRING,

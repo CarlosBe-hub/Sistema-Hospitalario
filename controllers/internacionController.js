@@ -1,22 +1,24 @@
-const Internacion = require('../models/InternacionModel');
-const Paciente = require('../models/PacienteModel');
-const Habitacion = require('../models/HabitacionModel');
-const Cama = require('../models/CamaModel');
-const Ala = require('../models/AlaModel');
-const MotivoInternacion = require('../models/MotivoInternacionModel');
-const Admisiones = require('../models/AdmisionModel');
-const { Op } = require('sequelize');
+const Internacion = require("../models/InternacionModel");
+const Paciente = require("../models/PacienteModel");
+const Habitacion = require("../models/HabitacionModel");
+const Cama = require("../models/CamaModel");
+const Ala = require("../models/AlaModel");
+const MotivoInternacion = require("../models/MotivoInternacionModel");
+const Admisiones = require("../models/AdmisionModel");
+const { Op } = require("sequelize");
 
 module.exports = {
   async formNuevaInternacion(req, res) {
     try {
       const pacientes = await Paciente.findAll({
-        where: { estado: 'Activo' },
-        include: [{
-          model: Admisiones,
-          where: { estado: 'activo' },
-          required: true
-        }]
+        where: { estado: "Activo" },
+        include: [
+          {
+            model: Admisiones,
+            where: { estado: "activo" },
+            required: true,
+          },
+        ],
       });
 
       const alas = await Ala.findAll();
@@ -24,24 +26,25 @@ module.exports = {
       const camas = await Cama.findAll();
       const motivos = await MotivoInternacion.findAll();
 
-      res.render('internacion', {
+      res.render("internacion", {
         pacientes,
         alas,
         habitaciones,
         camas,
         motivos,
         datosPrevios: {},
-        error: null
+        error: null,
       });
     } catch (error) {
       console.error(error);
-      res.status(500).send('Error al cargar el formulario de internación');
+      res.status(500).send("Error al cargar el formulario de internación");
     }
   },
 
   async crearInternacion(req, res) {
     try {
-      const { id_paciente, fecha_ingreso, id_habitacion, id_motivo, id_cama } = req.body;
+      const { id_paciente, fecha_ingreso, id_habitacion, id_motivo, id_cama } =
+        req.body;
 
       const paciente = await Paciente.findByPk(id_paciente);
 
@@ -49,15 +52,15 @@ module.exports = {
       const admisionActiva = await Admisiones.findOne({
         where: {
           id_paciente,
-          estado: 'Activo'
-        }
+          estado: "Activo",
+        },
       });
 
       if (!admisionActiva) {
         return await module.exports.renderFormularioConError(
           res,
           req.body,
-          'El paciente no tiene una admisión activa.'
+          "El paciente no tiene una admisión activa."
         );
       }
 
@@ -65,20 +68,20 @@ module.exports = {
       const internados = await Internacion.findAll({
         where: {
           id_habitacion,
-          estado: 'Activa'
+          estado: "Activa",
         },
-        include: [{ model: Paciente, as: 'Paciente', attributes: ['genero'] }]
+        include: [{ model: Paciente, as: "Paciente", attributes: ["genero"] }],
       });
 
       const conflictoGenero =
         internados.length > 0 &&
-        internados.some(i => i.Paciente.genero !== paciente.genero);
+        internados.some((i) => i.Paciente.genero !== paciente.genero);
 
       if (conflictoGenero) {
         return await module.exports.renderFormularioConError(
           res,
           req.body,
-          'No se puede internar un paciente de género diferente en esta habitación.'
+          "No se puede internar un paciente de género diferente en esta habitación."
         );
       }
 
@@ -88,15 +91,15 @@ module.exports = {
         return await module.exports.renderFormularioConError(
           res,
           req.body,
-          'La cama seleccionada no pertenece a la habitación elegida.'
+          "La cama seleccionada no pertenece a la habitación elegida."
         );
       }
 
-      if (!['Libre', 'Higienizada', 'Disponible'].includes(cama.estado)) {
+      if (!["Libre", "Higienizada", "Disponible"].includes(cama.estado)) {
         return await module.exports.renderFormularioConError(
           res,
           req.body,
-          'La cama seleccionada no está disponible.'
+          "La cama seleccionada no está disponible."
         );
       }
 
@@ -104,24 +107,30 @@ module.exports = {
       const internacionActiva = await Internacion.findOne({
         where: {
           id_paciente,
-          estado: 'Activa'
+          estado: "Activa",
         },
-        include: [{
-          model: Cama,
-          as: 'Cama',
-          include: [{
-            model: Habitacion,
-            as: 'Habitacion',
-            include: [{ model: Ala, as: 'Ala' }]
-          }]
-        }]
+        include: [
+          {
+            model: Cama,
+            as: "Cama",
+            include: [
+              {
+                model: Habitacion,
+                as: "Habitacion",
+                include: [{ model: Ala, as: "Ala" }],
+              },
+            ],
+          },
+        ],
       });
 
       if (internacionActiva) {
         const camaActual = internacionActiva.Cama;
         const habitacion = camaActual?.Habitacion;
         const ala = habitacion?.Ala;
-        const fecha = new Date(internacionActiva.fecha_ingreso).toLocaleDateString();
+        const fecha = new Date(
+          internacionActiva.fecha_ingreso
+        ).toLocaleDateString();
 
         const mensaje = `El paciente ya se encuentra internado desde el ${fecha} en la cama ${camaActual?.numero}, habitación ${habitacion?.numero}, ala ${ala?.nombre}.`;
 
@@ -135,20 +144,20 @@ module.exports = {
       // Crear la internación
       await Internacion.create({
         fecha_ingreso,
-        estado: 'Activa',
+        estado: "Activa",
         id_paciente,
         id_habitacion,
         id_motivo: id_motivo || null,
-        id_cama
+        id_cama,
       });
 
       // Cambiar estado de la cama a Ocupada
-      await cama.update({ estado: 'Ocupada' });
+      await cama.update({ estado: "Ocupada" });
 
-      res.redirect('/internacion/listado');
+      res.redirect("/internacion/listado");
     } catch (error) {
       console.error(error);
-      res.status(500).send('Error al crear la internación');
+      res.status(500).send("Error al crear la internación");
     }
   },
 
@@ -158,52 +167,54 @@ module.exports = {
         include: [
           {
             model: Paciente,
-            as: 'Paciente',
-            attributes: ['nombre', 'apellido', 'dni', 'genero']
+            as: "Paciente",
+            attributes: ["nombre", "apellido", "dni", "genero"],
           },
           {
             model: Cama,
-            as: 'Cama',
-            attributes: ['numero', 'estado'],
+            as: "Cama",
+            attributes: ["numero", "estado"],
             include: [
               {
                 model: Habitacion,
-                as: 'Habitacion',
-                attributes: ['numero'],
+                as: "Habitacion",
+                attributes: ["numero"],
                 include: [
                   {
                     model: Ala,
-                    as: 'Ala',
-                    attributes: ['nombre']
-                  }
-                ]
-              }
-            ]
+                    as: "ala",
+                    attributes: ["nombre"],
+                  },
+                ],
+              },
+            ],
           },
           {
             model: MotivoInternacion,
-            as: 'MotivoInternacion',
-            attributes: ['descripcion']
-          }
+            as: "MotivoInternacion",
+            attributes: ["descripcion"],
+          },
         ],
-        order: [['fecha_ingreso', 'DESC']]
+        order: [["fecha_ingreso", "DESC"]],
       });
 
-      res.render('internacionListado', { internaciones });
+      res.render("internacionListado", { internaciones });
     } catch (error) {
       console.error(error);
-      res.status(500).send('Error al obtener el listado de internaciones');
+      res.status(500).send("Error al obtener el listado de internaciones");
     }
   },
 
   async renderFormularioConError(res, datosPrevios, error) {
     const pacientes = await Paciente.findAll({
-      where: { estado: 'Activo' },
-      include: [{
-        model: Admisiones,
-        where: { estado: 'activo' },
-        required: true
-      }]
+      where: { estado: "Activo" },
+      include: [
+        {
+          model: Admisiones,
+          where: { estado: "activo" },
+          required: true,
+        },
+      ],
     });
 
     const alas = await Ala.findAll();
@@ -211,14 +222,14 @@ module.exports = {
     const camas = await Cama.findAll();
     const motivos = await MotivoInternacion.findAll();
 
-    res.render('internacion', {
+    res.render("internacion", {
       pacientes,
       alas,
       habitaciones,
       camas,
       motivos,
       datosPrevios,
-      error
+      error,
     });
-  }
+  },
 };

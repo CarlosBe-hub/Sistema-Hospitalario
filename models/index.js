@@ -17,6 +17,7 @@ const HistorialMedico = require('./HistorialMedicoModel');
 const Internacion = require('./InternacionModel');
 const Medico = require('./MedicoModel');
 const MotivoInternacion = require('./MotivoInternacionModel');
+const MotivoAdmision = require('./MotivoAdmisionModel');
 const ObraSocial = require('./ObraSocialModel');
 const Paciente = require('./PacienteModel');
 const SignosVitales = require('./SignosVitalesModel');
@@ -75,7 +76,7 @@ Cama.hasOne(Internacion, { foreignKey: 'id_cama', as: 'Internacion' });
 
 // ─────────────────────────────────────────────
 // HABITACION Y ALA
-Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'Ala' });
+Habitacion.belongsTo(Ala, { foreignKey: 'id_ala', as: 'ala' });
 Ala.hasMany(Habitacion, { foreignKey: 'id_ala' });
 
 Habitacion.hasMany(Cama, { foreignKey: 'id_habitacion' });
@@ -85,6 +86,14 @@ Habitacion.hasMany(Admision, { foreignKey: 'id_habitacion' });
 Admision.belongsTo(Habitacion, { foreignKey: 'id_habitacion' });
 
 // ─────────────────────────────────────────────
+// ADMISION - MOTIVOADMISION
+Admision.belongsTo(MotivoAdmision, {
+  foreignKey: 'id_motivo',
+  as: 'motivo_admision'
+});
+MotivoAdmision.hasMany(Admision, {
+  foreignKey: 'id_motivo'
+});
 // MEDICO Y ESPECIALIZACION
 Diagnostico.belongsTo(Medico, { foreignKey: 'id_medico' });
 Medico.hasMany(Diagnostico, { foreignKey: 'id_medico' });
@@ -123,6 +132,7 @@ module.exports = {
   Internacion,
   Medico,
   MotivoInternacion,
+  MotivoAdmision,
   ObraSocial,
   Paciente,
   SignosVitales
