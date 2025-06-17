@@ -29,7 +29,7 @@ exports.vistaListado = async (req, res) => {
   }
 };
 
-// Guardar nueva admisión (cerrando la anterior si es necesario)
+// Guardar nueva admisión
 exports.guardarAdmision = async (req, res) => {
   try {
     const { id_paciente, fecha_admision, id_motivo } = req.body;
@@ -43,9 +43,11 @@ exports.guardarAdmision = async (req, res) => {
       return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
     }
 
-    // Validar que paciente no esté inactivo
-    if (paciente.estado === 'inactivo') {
-      return res.status(400).json({ error: 'No se puede realizar la admisión. El paciente está inactivo.' });
+    if (paciente.estado.toLowerCase() === 'inactivo') {
+      return res.status(400).json({
+        error: 'No se puede realizar la admisión. El paciente está inactivo.',
+        pacienteInactivo: true
+      });
     }
 
     const motivo = await MotivoAdmision.findByPk(id_motivo);
@@ -100,7 +102,6 @@ exports.guardarAdmision = async (req, res) => {
   }
 };
 
-
 // Actualizar admisión existente
 exports.actualizarAdmision = async (req, res) => {
   try {
@@ -118,6 +119,13 @@ exports.actualizarAdmision = async (req, res) => {
     const paciente = await Paciente.findByPk(id_paciente);
     if (!paciente) {
       return res.status(400).json({ error: 'El paciente seleccionado no existe.' });
+    }
+
+    if (paciente.estado.toLowerCase() === 'inactivo' && estado === 'activo') {
+      return res.status(400).json({
+        error: 'No se puede activar la admisión. El paciente está inactivo.',
+        pacienteInactivo: true
+      });
     }
 
     const motivo = await MotivoAdmision.findByPk(id_motivo);
@@ -159,7 +167,7 @@ exports.actualizarAdmision = async (req, res) => {
   }
 };
 
-// Dar de baja admisión (cambiar estado a cancelado)
+// Dar de baja admisión
 exports.darDeBajaAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
@@ -182,14 +190,12 @@ exports.darDeBajaAdmision = async (req, res) => {
 exports.buscarPacientePorDNI = async (req, res) => {
   try {
     let { dni } = req.params;
-    console.log('DNI recibido:', dni);
 
     if (!dni || dni.length < 6) {
       return res.status(400).json({ error: 'DNI inválido' });
     }
 
     dni = dni.trim();
-    console.log('DNI limpio:', dni);
 
     const paciente = await Paciente.findOne({
       where: {
@@ -198,8 +204,6 @@ exports.buscarPacientePorDNI = async (req, res) => {
         }
       }
     });
-
-    console.log('Paciente encontrado:', paciente);
 
     if (!paciente) {
       return res.status(404).json({ error: 'Paciente no encontrado' });
@@ -219,5 +223,3 @@ exports.buscarPacientePorDNI = async (req, res) => {
     res.status(500).json({ error: 'Error al buscar paciente' });
   }
 };
-
-
