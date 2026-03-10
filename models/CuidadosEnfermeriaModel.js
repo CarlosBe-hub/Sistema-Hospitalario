@@ -12,9 +12,23 @@ CuidadosEnfermeria.init({
     primaryKey: true,
     autoIncrement: true
   },
-  fecha: {
+  fecha: { 
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  
+  plan_cuidados: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  intervenciones: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  medicamentos_administrados: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   observaciones: {
     type: DataTypes.TEXT,

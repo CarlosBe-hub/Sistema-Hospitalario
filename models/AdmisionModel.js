@@ -17,6 +17,10 @@ Admision.init({
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  id_turno: {  
+    type: DataTypes.INTEGER,
+    allowNull: true 
+  },
   fecha_admision: {
     type: DataTypes.DATE,
     allowNull: false
