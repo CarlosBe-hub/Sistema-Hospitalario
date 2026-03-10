@@ -1,0 +1,45 @@
+extends ../layout
+
+block content
+  .container.mt-4
+    h2.mb-4 
+      i.bi.bi-clipboard-pulse.me-2
+      | Panel de Enfermería - Pacientes Internados
+
+    table#tablaEnfermeria.table.table-hover.table-bordered
+      thead.table-light
+        tr
+          th Paciente
+          th DNI
+          th Habitación
+          th Cama
+          th Fecha de Ingreso
+          th Acciones
+      tbody
+        each internacion in pacientes
+          tr
+            td #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+            td #{internacion.Paciente.dni}
+            td #{internacion.Cama && internacion.Cama.Habitacion ? internacion.Cama.Habitacion.numero : 'N/D'}
+            td #{internacion.Cama ? internacion.Cama.numero : 'N/D'}
+            td
+              - var fecha = new Date(internacion.fecha_ingreso);
+              - var dia = String(fecha.getDate()).padStart(2, '0');
+              - var mes = String(fecha.getMonth() + 1).padStart(2, '0');
+              - var anio = fecha.getFullYear();
+              | #{dia}/#{mes}/#{anio}
+            td
+              a.btn.btn-sm.btn-primary(href=`/enfermeria/${internacion.id_internacion}`)
+                i.bi.bi-activity.me-1
+                | Evaluar Paciente
+
+block scripts
+  script.
+    $(document).ready(function() {
+      $('#tablaEnfermeria').DataTable({
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        responsive: true
+      });
+    });

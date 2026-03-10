@@ -2,6 +2,8 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 const Paciente = require('./PacienteModel');
 const Medico = require('./MedicoModel');
+const Enfermero = require('./EnfermeroModel'); 
+const Internacion = require('./InternacionModel'); 
 
 class HistorialMedico extends Model {}
 
@@ -13,41 +15,67 @@ HistorialMedico.init({
   },
   fecha: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: false,
+    defaultValue: DataTypes.NOW 
   },
   diagnostico: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true 
   },
-  medico_acargo: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  cuidados: {
+  motivo_internacion: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  notas: {
+  sintomas_principales: {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  enfermedades_previas: { type: DataTypes.TEXT },
+  cirugias: { type: DataTypes.TEXT },
+  alergias: { type: DataTypes.TEXT },
+  medicamentos_actuales: { type: DataTypes.TEXT },
+  antecedentes_familiares: { type: DataTypes.TEXT },
+  
+  
   id_medico: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: {
-      model: Medico,
+      model: 'medico', 
       key: 'id_medico'
     },
-    onDelete: 'CASCADE'
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+  },
+  id_enfermero: { 
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'enfermero',
+      key: 'id_enfermero'
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
   },
   id_paciente: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Paciente,
+      model: 'paciente',
       key: 'id_paciente'
     },
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+  },
+  id_internacion: { 
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'internacion',
+      key: 'id_internacion'
+    },
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
   }
 }, {
   sequelize,

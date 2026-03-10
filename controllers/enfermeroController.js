@@ -3,10 +3,9 @@ const {
   CuidadosEnfermeria, Cama, Habitacion, Enfermero 
 } = require('../models');
 
-
+// Mostrar panel con pacientes internados
 exports.vistaPacientesInternados = async (req, res) => {
   try {
-    // Buscamos a los pacientes que están actualmente en una cama
     const internacionesActivas = await Internacion.findAll({
       include: [
         { model: Paciente, as: 'Paciente' },
@@ -18,7 +17,6 @@ exports.vistaPacientesInternados = async (req, res) => {
       order: [['id_internacion', 'DESC']]
     });
 
-    // Renderizamos la vista de PUG enviando los datos
     res.render('enfermeria/panel_internados', { pacientes: internacionesActivas });
   } catch (error) {
     console.error('Error al cargar panel de enfermería:', error);
@@ -26,7 +24,7 @@ exports.vistaPacientesInternados = async (req, res) => {
   }
 };
 
-// Ver el detalle para realizar la evaluación continua
+// Detalle para evaluación
 exports.detallePaciente = async (req, res) => {
   try {
     const { id_internacion } = req.params;
@@ -34,9 +32,9 @@ exports.detallePaciente = async (req, res) => {
     const internacion = await Internacion.findByPk(id_internacion, {
       include: [
         { model: Paciente, as: 'Paciente' },
-        { model: HistorialMedico, order: [['id_historial', 'DESC']] },
-        { model: SignosVitales, order: [['fecha_registro', 'DESC']] },
-        { model: CuidadosEnfermeria, order: [['fecha', 'DESC']] } // Ajustado al nombre de columna 'fecha'
+        { model: HistorialMedico },
+        { model: SignosVitales },
+        { model: CuidadosEnfermeria }
       ]
     });
 
@@ -46,12 +44,12 @@ exports.detallePaciente = async (req, res) => {
 
     res.render('enfermeria/detalle_evaluacion', { internacion });
   } catch (error) {
-    console.error('Error al obtener detalle del paciente:', error);
-    res.status(500).json({ error: 'Error al cargar el detalle para enfermería' });
+    console.error('Error al obtener detalle:', error);
+    res.status(500).json({ error: 'Error al cargar el detalle' });
   }
 };
 
-// Guardar Historial Medico (Evaluación Inicial)
+// Historial Médico
 exports.guardarHistorial = async (req, res) => {
   try {
     const { 
@@ -61,10 +59,9 @@ exports.guardarHistorial = async (req, res) => {
     } = req.body;
 
     if (!id_internacion || !id_paciente || !id_enfermero) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios (Internación, Paciente o Enfermero).' });
+      return res.status(400).json({ error: 'Faltan datos obligatorios.' });
     }
 
-    // El enfermero registra el historial medico, enfermedades previas, alergias, etc.
     const nuevoHistorial = await HistorialMedico.create({
       id_internacion,
       id_paciente, 
@@ -76,7 +73,9 @@ exports.guardarHistorial = async (req, res) => {
       antecedentes_familiares,
       motivo_internacion,
       sintomas_principales,
-      fecha_registro: new Date()
+      fecha: new Date(), // CORRECCIÓN: 'fecha' en lugar de 'fecha_registro'
+      diagnostico: null,  // CORRECCIÓN: Evita el error de notNull
+      id_medico: null     // CORRECCIÓN: Evita el error de notNull
     });
 
     res.status(200).json({ 
@@ -89,7 +88,7 @@ exports.guardarHistorial = async (req, res) => {
   }
 };
 
-// Registrar Signos Vitales
+// Signos Vitales
 exports.guardarSignosVitales = async (req, res) => {
   try {
     const { 
@@ -99,11 +98,9 @@ exports.guardarSignosVitales = async (req, res) => {
     } = req.body;
 
     if (!id_internacion || !id_enfermero) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios para registrar los signos vitales.' });
+      return res.status(400).json({ error: 'Faltan datos obligatorios.' });
     }
 
-    // Se realiza la medición de presión arterial, frecuencia cardíaca, etc. 
-    
     const nuevosSignos = await SignosVitales.create({
       id_internacion,
       id_paciente, 
@@ -113,7 +110,7 @@ exports.guardarSignosVitales = async (req, res) => {
       frecuencia_respiratoria,
       temperatura,
       aspecto_general,
-      fecha_registro: new Date()
+      fecha_hora: new Date() 
     });
 
     res.status(200).json({ 
@@ -126,7 +123,7 @@ exports.guardarSignosVitales = async (req, res) => {
   }
 };
 
-// Guardar Plan de Cuidados Preliminar
+// Plan de Cuidados
 exports.guardarPlanCuidados = async (req, res) => {
   try {
     const { 
@@ -135,7 +132,7 @@ exports.guardarPlanCuidados = async (req, res) => {
     } = req.body;
 
     if (!id_internacion || !id_paciente || !id_enfermero || !plan_cuidados) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios para el plan de cuidados.' });
+      return res.status(400).json({ error: 'Faltan datos obligatorios.' });
     }
 
     const nuevoCuidado = await CuidadosEnfermeria.create({

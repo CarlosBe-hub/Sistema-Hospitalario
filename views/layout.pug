@@ -14,7 +14,6 @@ html
     // Estilos personalizados
     link(rel="stylesheet", href="/css/layout.css")
 
-    // Bloque para estilos específicos por vista
     block styles
 
   body
@@ -22,87 +21,80 @@ html
     .sidebar
       .text-center.mb-4
         img(src="/img/iconhospital.jpg", alt="Logo", width="45", height="45", class="mb-2 rounded")
-        h5 Sistema Hospital San Carlos
-
+        h5 Sistema Hospital San Carlos 
       nav.nav.flex-column
         a.nav-link.text-white(class=activePage == '/' ? 'fw-bold text-primary' : '', href='/')
           i.bi.bi-house-door.me-2
-          | Inicio
+          | Inicio 
 
         a.nav-link.text-white(class=activePage == '/pacientes' ? 'fw-bold text-primary' : '', href='/pacientes')
           i.bi.bi-people-fill.me-2
-          | Pacientes
+          | Pacientes 
 
         a.nav-link.text-white(class=activePage == '/admision' ? 'fw-bold text-primary' : '', href='/admision')
           i.bi.bi-journal-plus.me-2
-          | Admisión
+          | Admisión 
 
         .dropdown
           button.btn.btn-outline-light.w-100.text-start.mb-2(type='button', data-bs-toggle='dropdown', aria-expanded='false')
             i.bi.bi-door-closed-fill.me-2
-            | Internación
+            | Internación 
           ul.dropdown-menu
             li
               a.dropdown-item(href='/internacion/nueva')
                 i.bi.bi-plus-circle.me-2
-                | Nueva Internación
+                | Nueva Internación 
             li
               a.dropdown-item(href='/internacion/listado')
                 i.bi.bi-table.me-2
-                | Listado de Internaciones
+                | Listado de Internaciones 
 
         // Emergencia
         .dropdown
           button.btn.btn-outline-danger.w-100.text-start.mb-2(type='button', data-bs-toggle='dropdown', aria-expanded='false')
             i.bi.bi-exclamation-triangle-fill.me-2
-            | Emergencia
+            | Emergencia 
           ul.dropdown-menu
             li
               a.dropdown-item(href='/emergencia/crear')
                 i.bi.bi-person-fill-add.me-2
-                | Crear Paciente NN
+                | Crear Paciente NN 
 
         hr.bg-light
 
+        // Módulos Clínicos Actualizados
         .dropdown
           button.btn.btn-outline-light.w-100.text-start(type='button', data-bs-toggle='dropdown', aria-expanded='false')
             i.bi.bi-grid-3x3-gap.me-2
-            | Módulos
+            | Módulos 
           ul.dropdown-menu
             li
               a.dropdown-item(href='/enfermeria')
                 i.bi.bi-clipboard-pulse.me-2
-                | Enfermería
+                | Enfermería 
             li
-              a.dropdown-item(href='/evaluacion-medica')
+              a.dropdown-item(href='/medico')
                 i.bi.bi-stethoscope.me-2
-                | Evaluación Médica
+                | Evaluación Médica 
             li
               hr.dropdown-divider
             li
-              a.dropdown-item(href='/alta-medica')
-                i.bi.bi-arrow-up-square.me-2
-                | Alta Médica
-            li
               a.dropdown-item(href='/historial-medico')
                 i.bi.bi-clock-history.me-2
-                | Historial Médico
+                | Historial Médico 
             li
               a.dropdown-item(href='/cuidados-enfermeria')
                 i.bi.bi-heart-pulse.me-2
-                | Cuidados Enfermería
+                | Cuidados Enfermería 
 
     // Contenido principal
     .content
       block content
 
-    // jQuery (requerido por DataTables)
+    // Scripts Base
     script(src="https://code.jquery.com/jquery-3.6.0.min.js")
-    // DataTables JS
     script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
     script(src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js")
-    // Bootstrap Bundle JS (Popper + Bootstrap)
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
 
-    // Bloque para scripts específicos por vista
     block scripts

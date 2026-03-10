@@ -1,0 +1,164 @@
+extends ../layout
+
+block content
+  .container.mt-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h2 
+        i.bi.bi-person-lines-fill.me-2
+        | Evaluación de Enfermería
+      a.btn.btn-outline-secondary(href="/enfermeria") Volver al listado
+
+    // Tarjeta de Informacion del Paciente
+    .card.mb-4.shadow-sm
+      .card-body
+        .row
+          .col-md-3
+            strong Paciente: 
+            | #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+          .col-md-3
+            strong DNI: 
+            | #{internacion.Paciente.dni}
+          .col-md-3
+            strong Edad: 
+            | #{internacion.Paciente.edad || 'N/D'} años
+          .col-md-3
+            strong Género: 
+            | #{internacion.Paciente.genero}
+
+    // Pestañas de Evaluación
+    ul.nav.nav-tabs#evaluacionTabs(role="tablist")
+      li.nav-item(role="presentation")
+        button.nav-link.active#signos-tab(data-bs-toggle="tab", data-bs-target="#signos", type="button", role="tab") Signos Vitales
+      li.nav-item(role="presentation")
+        button.nav-link#historial-tab(data-bs-toggle="tab", data-bs-target="#historial", type="button", role="tab") Historial Médico Inicial
+      li.nav-item(role="presentation")
+        button.nav-link#cuidados-tab(data-bs-toggle="tab", data-bs-target="#cuidados", type="button", role="tab") Plan de Cuidados
+
+    .tab-content.p-4.border.border-top-0.bg-white.shadow-sm#evaluacionTabsContent
+      
+      // PESTAÑA 1: SIGNOS VITALES
+      .tab-pane.fade.show.active#signos(role="tabpanel")
+        h5 Registrar Signos Vitales
+        form#formSignos
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_paciente", value=internacion.id_paciente)
+          // Asume que tienes el ID del enfermero logueado, por ahora lo forzamos a 1
+          input(type="hidden", name="id_enfermero", value="1") 
+          
+          .row.mb-3
+            .col-md-3
+              label.form-label Presión Arterial
+              input.form-control(type="text", name="presion_arterial", placeholder="Ej: 120/80", required)
+            .col-md-3
+              label.form-label Frecuencia Cardíaca
+              input.form-control(type="number", name="frecuencia_cardiaca", placeholder="Latidos por min", required)
+            .col-md-3
+              label.form-label Frecuencia Respiratoria
+              input.form-control(type="number", name="frecuencia_respiratoria", placeholder="Resp por min", required)
+            .col-md-3
+              label.form-label Temperatura (°C)
+              input.form-control(type="number", step="0.1", name="temperatura", placeholder="Ej: 36.5", required)
+          
+          .mb-3
+            label.form-label Aspecto General
+            input.form-control(type="text", name="aspecto_general", placeholder="Color de piel, nivel de consciencia, etc.")
+          
+          button.btn.btn-primary(type="submit") Guardar Signos Vitales
+          div#msgSignos.mt-2
+
+      // PESTAÑA 2: HISTORIAL MeDICO
+      .tab-pane.fade#historial(role="tabpanel")
+        h5 Historial Clínico de Ingreso
+        form#formHistorial
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_paciente", value=internacion.id_paciente)
+          input(type="hidden", name="id_enfermero", value="1")
+
+          .row.mb-3
+            .col-md-6
+              label.form-label Motivo de Internación
+              input.form-control(type="text", name="motivo_internacion", required)
+            .col-md-6
+              label.form-label Síntomas Principales
+              input.form-control(type="text", name="sintomas_principales", required)
+
+          .row.mb-3
+            .col-md-6
+              label.form-label Enfermedades Previas
+              textarea.form-control(name="enfermedades_previas", rows="2")
+            .col-md-6
+              label.form-label Medicamentos Actuales
+              textarea.form-control(name="medicamentos_actuales", rows="2")
+
+          .row.mb-3
+            .col-md-4
+              label.form-label Alergias
+              input.form-control(type="text", name="alergias")
+            .col-md-4
+              label.form-label Cirugías
+              input.form-control(type="text", name="cirugias")
+            .col-md-4
+              label.form-label Antecedentes Familiares
+              input.form-control(type="text", name="antecedentes_familiares")
+
+          button.btn.btn-primary(type="submit") Guardar Historial Médico
+          div#msgHistorial.mt-2
+
+      // PESTAÑA 3: PLAN DE CUIDADOS
+      .tab-pane.fade#cuidados(role="tabpanel")
+        h5 Plan Preliminar de Cuidados
+        form#formCuidados
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_paciente", value=internacion.id_paciente)
+          input(type="hidden", name="id_enfermero", value="1")
+
+          .mb-3
+            label.form-label Plan de Cuidados Preliminar
+            textarea.form-control(name="plan_cuidados", rows="3", required)
+          
+          .row.mb-3
+            .col-md-6
+              label.form-label Intervenciones Inmediatas
+              textarea.form-control(name="intervenciones", rows="2")
+            .col-md-6
+              label.form-label Medicamentos Administrados
+              textarea.form-control(name="medicamentos_administrados", rows="2")
+
+          .mb-3
+            label.form-label Observaciones
+            textarea.form-control(name="observaciones", rows="2")
+
+          button.btn.btn-primary(type="submit") Guardar Plan de Cuidados
+          div#msgCuidados.mt-2
+
+block scripts
+  script.
+    $(document).ready(function() {
+      // Función genérica para enviar los formularios con AJAX
+      function enviarFormulario(idFormulario, url, idMensaje) {
+        $(idFormulario).submit(function(e) {
+          e.preventDefault();
+          const data = $(this).serialize(); // Captura todos los campos del form
+
+          $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+            success: function(res) {
+              $(idMensaje).html(`<div class="alert alert-success">${res.mensaje}</div>`);
+              $(idFormulario)[0].reset(); // Limpia el formulario
+              setTimeout(() => $(idMensaje).html(''), 3000);
+            },
+            error: function(xhr) {
+              const err = xhr.responseJSON ? xhr.responseJSON.error : 'Ocurrió un error.';
+              $(idMensaje).html(`<div class="alert alert-danger">${err}</div>`);
+            }
+          });
+        });
+      }
+
+      // Inicializar eventos de envío para cada pestaña
+      enviarFormulario('#formSignos', '/enfermeria/signos-vitales', '#msgSignos');
+      enviarFormulario('#formHistorial', '/enfermeria/historial', '#msgHistorial');
+      enviarFormulario('#formCuidados', '/enfermeria/plan-cuidados', '#msgCuidados');
+    });

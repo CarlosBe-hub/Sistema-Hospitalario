@@ -11,6 +11,8 @@ const pacientesRoutes = require('./routes/pacientes');
 const admisionRoutes = require('./routes/admision');
 const internacionRoutes = require('./routes/internacion');
 const emergenciaRoutes = require('./routes/emergencia'); 
+const medicoRoutes = require('./routes/medico');         
+const enfermeriaRoutes = require('./routes/enfermeria');
 
 // Configuración del motor de vistas
 app.set('view engine', 'pug');
@@ -33,6 +35,8 @@ app.use('/pacientes', pacientesRoutes);
 app.use('/admision', admisionRoutes);
 app.use('/internacion', internacionRoutes);
 app.use('/emergencia', emergenciaRoutes); 
+app.use('/medico', medicoRoutes);         
+app.use('/enfermeria', enfermeriaRoutes); 
 
 // Ruta principal
 app.get('/', (req, res) => {
