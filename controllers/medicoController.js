@@ -7,7 +7,7 @@ const { Op } = require('sequelize');
 // Mostrar panel principal con pacientes internados
 exports.vistaPacientesInternados = async (req, res) => {
   try {
-    // Buscamos las internaciones que NO tengan fecha de alta (es decir, pacientes actualmente internados)
+    // Buscamos las internaciones incluyendo su estado de alta
     const internacionesActivas = await Internacion.findAll({
       include: [
         { model: Paciente, as: 'Paciente' },
@@ -15,7 +15,6 @@ exports.vistaPacientesInternados = async (req, res) => {
           model: Cama, as: 'Cama',
           include: [{ model: Habitacion, as: 'Habitacion' }]
         },
-        
         { model: AltaMedica }
       ],
       order: [['id_internacion', 'DESC']]
@@ -32,7 +31,7 @@ exports.vistaPacientesInternados = async (req, res) => {
   }
 };
 
- // Ver la historia clínica detallada de la internación actual
+// Ver la historia clínica detallada de la internación actual
 exports.detallePaciente = async (req, res) => {
   try {
     const { id_internacion } = req.params;
@@ -40,9 +39,19 @@ exports.detallePaciente = async (req, res) => {
     const internacion = await Internacion.findByPk(id_internacion, {
       include: [
         { model: Paciente, as: 'Paciente' },
-        { model: SignosVitales, order: [['id_signos_vitales', 'DESC']] }, // Para ver la evolucion
-        { model: Diagnostico, order: [['fecha_diagnostico', 'DESC']], include: [{ model: Medico }] },
-        { model: Tratamiento, order: [['fecha_indicacion', 'DESC']], include: [{ model: Medico }] }
+        { model: SignosVitales }, 
+        { model: Diagnostico, include: [{ model: Medico }] },
+        { model: Tratamiento, include: [{ model: Medico }] },
+        { 
+          model: Cama, 
+          as: 'Cama',
+          include: [{ model: Habitacion, as: 'Habitacion' }]
+        }
+      ],
+      order: [
+        [SignosVitales, 'id_signos', 'DESC'],
+        [Diagnostico, 'fecha', 'DESC'], 
+        [Tratamiento, 'fecha_indicacion', 'DESC']
       ]
     });
 
@@ -60,19 +69,21 @@ exports.detallePaciente = async (req, res) => {
 // Guardar Evaluación Medica y Diagnostico
 exports.guardarDiagnostico = async (req, res) => {
   try {
-    const { id_internacion, id_medico, descripcion, pruebas_solicitadas } = req.body;
+    const { id_internacion, id_paciente, id_medico, descripcion, pruebas_solicitadas } = req.body;
 
-    if (!id_internacion || !id_medico || !descripcion) {
+    // Validamos que no falten datos obligatorios
+    if (!id_internacion || !id_paciente || !id_medico || !descripcion) {
       return res.status(400).json({ error: 'Faltan datos obligatorios para registrar el diagnóstico.' });
     }
 
-    // El medico realiza evaluaciones medicas periodicas y solicita pruebas diagnosticas, como análisis de sangre, radiografias, resonancias magneticas, etc. 
+    // Insertamos usando las columnas exactas de tu base de datos
     const nuevoDiagnostico = await Diagnostico.create({
       id_internacion,
+      id_paciente, 
       id_medico,
       descripcion,
       pruebas_solicitadas: pruebas_solicitadas || 'Ninguna',
-      fecha_diagnostico: new Date()
+      fecha: new Date() 
     });
 
     res.status(200).json({ 
@@ -85,7 +96,7 @@ exports.guardarDiagnostico = async (req, res) => {
   }
 };
 
-//  Guardar un nuevo Tratamiento o Indicacion Medica
+// Guardar un nuevo Tratamiento o Indicacion Medica
 exports.guardarTratamiento = async (req, res) => {
   try {
     const { 
@@ -97,20 +108,19 @@ exports.guardarTratamiento = async (req, res) => {
       return res.status(400).json({ error: 'Faltan datos obligatorios para indicar el tratamiento.' });
     }
 
-    // El paciente recibe tratamientos medicos, terapias fisicas u ocupacionales. Se administran medicamentos. 
     const nuevoTratamiento = await Tratamiento.create({
       id_internacion,
       id_medico,
       terapias_procedimientos: terapias_procedimientos || null,
       medicamentos_dosis: medicamentos_dosis || null,
       control_dolor: control_dolor || null,
-      observaciones_evolucion: observaciones_evolucion || null, // El equipo medico evaluaa continuamente la respuesta del paciente.
+      observaciones_evolucion: observaciones_evolucion || null,
       fecha_indicacion: new Date()
     });
 
     res.status(200).json({ 
       mensaje: 'Indicaciones medicas y tratamiento guardados correctamente.',
-      tratamiento: nuevoTratamiento
+      treatment: nuevoTratamiento
     });
   } catch (error) {
     console.error('Error al guardar tratamiento:', error);
@@ -118,12 +128,12 @@ exports.guardarTratamiento = async (req, res) => {
   }
 };
 
-// Dar el Alta Hospitalaria
+// Dar el Alta Hospitalaria (Mapeado a la nueva estructura de la base de datos)
 exports.darAlta = async (req, res) => {
   try {
     const { 
       id_internacion, id_medico, instrucciones_cuidado, 
-      recetas_medicas, recomendaciones_seguimiento 
+      recetas_medicas, recommendations_seguimiento 
     } = req.body;
 
     if (!id_internacion || !id_medico) {
@@ -135,20 +145,26 @@ exports.darAlta = async (req, res) => {
       return res.status(404).json({ error: 'Internación no encontrada.' });
     }
 
-    // Una vez que el paciente esta lo suficientemente recuperado, se le da de alta. Se proporcionan instrucciones de cuidado posterior, recetas medicas y recomendaciones.
+    // Concatenamos las cadenas del formulario web para rellenar de forma rica 'instrucciones_cuidados'
+    const todasLasInstrucciones = `
+      Cuidados: ${instrucciones_cuidado || 'Sin indicaciones particulares'}. 
+      Recetas: ${recetas_medicas || 'Ninguna'}. 
+      Seguimiento: ${recommendations_seguimiento || 'Control por consultorio externo'}.
+    `.trim();
+
+    // Insertamos siguiendo la estructura estricta y actualizada de tu MySQL
     const nuevaAlta = await AltaMedica.create({
       id_internacion,
-      fecha_alta: new Date(),
-      instrucciones_cuidado: instrucciones_cuidado || 'Sin instrucciones particulares',
-      recetas_medicas: recetas_medicas || 'Ninguna',
-      recomendaciones_seguimiento: recomendaciones_seguimiento || 'Control por consultorio externo'
+      id_medico,               
+      fecha_salida: new Date(), 
+      estado: 'Finalizado',     
+      instrucciones_cuidados: todasLasInstrucciones
     });
 
     // Liberar la cama para que pueda ser asignada a un nuevo paciente
     if (internacion.id_cama) {
       const cama = await Cama.findByPk(internacion.id_cama);
       if (cama) {
-        // 'estado' (ej: 'ocupada', 'libre', 'limpieza')
         await cama.update({ estado: 'para_limpieza' }); 
       }
     }

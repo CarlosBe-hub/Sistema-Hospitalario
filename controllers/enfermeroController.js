@@ -12,7 +12,8 @@ exports.vistaPacientesInternados = async (req, res) => {
         { 
           model: Cama, as: 'Cama',
           include: [{ model: Habitacion, as: 'Habitacion' }]
-        }
+        },
+        { model: SignosVitales } 
       ],
       order: [['id_internacion', 'DESC']]
     });
@@ -73,9 +74,9 @@ exports.guardarHistorial = async (req, res) => {
       antecedentes_familiares,
       motivo_internacion,
       sintomas_principales,
-      fecha: new Date(), // CORRECCIÓN: 'fecha' en lugar de 'fecha_registro'
-      diagnostico: null,  // CORRECCIÓN: Evita el error de notNull
-      id_medico: null     // CORRECCIÓN: Evita el error de notNull
+      fecha: new Date(), 
+      diagnostico: null,  
+      id_medico: null     
     });
 
     res.status(200).json({ 

@@ -1,6 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 const Internacion = require('./InternacionModel');
+const Medico = require('./MedicoModel'); 
 
 class AltaMedica extends Model {}
 
@@ -30,6 +31,16 @@ AltaMedica.init({
       key: 'id_internacion'
     },
     onDelete: 'CASCADE'
+  },
+  id_medico: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: Medico,
+      key: 'id_medico'
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
   }
 }, {
   sequelize,

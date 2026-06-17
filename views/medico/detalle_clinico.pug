@@ -1,0 +1,231 @@
+extends ../layout
+
+block content
+  .container.mt-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h2 
+        i.bi.bi-heart-pulse-fill.me-2.text-danger
+        | Evolución y Detalle Clínico (Médico)
+      a.btn.btn-outline-secondary(href="/medico") Volver al listado
+
+    // Tarjeta de Información del Paciente
+    .card.mb-4.shadow-sm.border-start.border-danger.border-4
+      .card-body
+        .row
+          .col-md-3
+            strong Paciente: 
+            | #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+          .col-md-3
+            strong DNI: 
+            | #{internacion.Paciente.dni}
+          .col-md-3
+            strong Género: 
+            | #{internacion.Paciente.genero}
+          .col-md-3
+            strong Ubicación: 
+            if internacion.Cama && internacion.Cama.Habitacion
+              | Hab. #{internacion.Cama.Habitacion.numero} - Cama #{internacion.Cama.numero}
+            else
+              | N/D
+
+    // Pestañas del Panel Médico
+    ul.nav.nav-tabs#medicoTabs(role="tablist")
+      li.nav-item(role="presentation")
+        button.nav-link.active#diagnostico-tab(data-bs-toggle="tab", data-bs-target="#diagnostico", type="button", role="tab") Diagnósticos y Pruebas
+      li.nav-item(role="presentation")
+        button.nav-link#tratamiento-tab(data-bs-toggle="tab", data-bs-target="#tratamiento", type="button", role="tab") Tratamientos e Indicaciones
+      li.nav-item(role="presentation")
+        button.nav-link#signos-tab(data-bs-toggle="tab", data-bs-target="#signos", type="button", role="tab") Historial de Signos Vitales
+      li.nav-item(role="presentation")
+        button.nav-link.text-danger#alta-tab(data-bs-toggle="tab", data-bs-target="#alta", type="button", role="tab") Proceder al Alta
+
+    .tab-content.p-4.border.border-top-0.bg-white.shadow-sm#medicoTabsContent
+      
+      // DIAGNÓSTICOS Y EVOLUCIÓN
+      .tab-pane.fade.show.active#diagnostico(role="tabpanel")
+        h5.mb-3 Registrar Nueva Evolución / Diagnóstico
+        form#formDiagnostico.mb-4.p-3.bg-light.border.rounded
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_paciente", value=internacion.id_paciente)
+          input(type="hidden", name="id_medico", value="1")
+          .mb-3
+            label.form-label Descripción del Diagnóstico / Evolución Actual
+            textarea.form-control(name="descripcion", rows="3", placeholder="Escriba el estado clínico actual del paciente...", required=true)
+          .mb-3
+            label.form-label Solicitar Pruebas Diagnósticas (Opcional)
+            input.form-control(type="text", name="pruebas_solicitadas", placeholder="Ej: Análisis de sangre, Radiografía de tórax, Resonancia...")
+          button.btn.btn-danger(type="submit") Guardar Diagnóstico
+          div#msgDiagnostico.mt-2
+
+        h5.mt-4 Historial de Diagnósticos realizados en esta Internación
+        .table-responsive
+          table.table.table-striped.table-bordered.mt-2
+            thead.table-dark
+              tr
+                th Fecha
+                th Médico
+                th Diagnóstico / Evolución
+                th Pruebas Solicitadas
+            tbody
+              if internacion.Diagnosticos && internacion.Diagnosticos.length > 0
+                each diag in internacion.Diagnosticos
+                  tr
+                    td #{new Date(diag.fecha).toLocaleString('es-AR')}
+                    td #{diag.Medico ? diag.Medico.nombre + ' ' + diag.Medico.apellido : 'Dr. Regulador (1)'}
+                    td #{diag.descripcion}
+                    td
+                      span.badge.bg-info.text-dark #{diag.pruebas_solicitadas}
+              else
+                tr
+                  td.text-center(colspan="4") No se han registrado diagnósticos clínicos aún.
+
+      // TRATAMIENTOS E INDICACIONES
+      .tab-pane.fade#tratamiento(role="tabpanel")
+        h5.mb-3 Prescribir Tratamiento / Medicación
+        form#formTratamiento.mb-4.p-3.bg-light.border.rounded
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_medico", value="1")
+          .row.mb-3
+            .col-md-6
+              label.form-label Medicamentos y Dosis
+              textarea.form-control(name="medicamentos_dosis", rows="2", placeholder="Ej: Amoxicilina 500mg cada 8 horas")
+            .col-md-6
+              label.form-label Terapias o Procedimientos
+              textarea.form-control(name="terapias_procedimientos", rows="2", placeholder="Ej: Kinesiología respiratoria, Nebulizaciones")
+          .row.mb-3
+            .col-md-6
+              label.form-label Control y Alivio del Dolor (Analgesia)
+              input.form-control(type="text", name="control_dolor", placeholder="Ej: Diclofenac c/12hs si refiere dolor")
+            .col-md-6
+              label.form-label Observaciones de Evolución continua
+              input.form-control(type="text", name="observaciones_evolucion", placeholder="Notas adicionales para el enfermero")
+          button.btn.btn-danger(type="submit") Guardar Indicaciones Médicas
+          div#msgTratamiento.mt-2
+
+        h5.mt-4 Historial de Tratamientos Indicados
+        .table-responsive
+          table.table.table-striped.table-bordered.mt-2
+            thead.table-dark
+              tr
+                th Fecha
+                th Médico
+                th Medicación / Dosis
+                th Terapias
+                th Control Dolor
+            tbody
+              if internacion.Tratamientos && internacion.Tratamientos.length > 0
+                each trat in internacion.Tratamientos
+                  tr
+                    td #{new Date(trat.fecha_indicacion).toLocaleString('es-AR')}
+                    td #{trat.Medico ? trat.Medico.nombre + ' ' + trat.Medico.apellido : 'Dr. Regulador (1)'}
+                    td #{trat.medicamentos_dosis || 'N/C'}
+                    td #{trat.terapias_procedimientos || 'Ninguno'}
+                    td #{trat.control_dolor || 'N/C'}
+              else
+                tr
+                  td.text-center(colspan="5") No se han indicado tratamientos médicos todavía.
+
+      // HISTORIAL DE SIGNOS VITALES
+      .tab-pane.fade#signos(role="tabpanel")
+        h5.mb-3 Monitoreo de Constantes Vitales (Registros de Enfermería)
+        .table-responsive
+          table.table.table-hover.table-bordered
+            thead.table-secondary
+              tr
+                th Fecha / Hora
+                th Presión Art.
+                th Frec. Cardíaca
+                th Frec. Resp.
+                th Temp (°C)
+                th Aspecto General / Observaciones
+            tbody
+              if internacion.SignosVitales && internacion.SignosVitales.length > 0
+                each sv in internacion.SignosVitales
+                  tr
+                    td #{new Date(sv.fecha_hora).toLocaleString('es-AR')}
+                    td #{sv.presion_arterial || 'N/D'}
+                    td #{sv.frecuencia_cardiaca ? sv.frecuencia_cardiaca + ' lpm' : 'N/D'}
+                    td #{sv.frecuencia_respiratoria ? sv.frecuencia_respiratoria + ' rpm' : 'N/D'}
+                    td(class=(sv.temperatura >= 38 ? 'text-danger fw-bold' : '')) #{sv.temperatura ? sv.temperatura + ' °C' : 'N/D'}
+                    td #{sv.aspecto_general || 'Sin observaciones de aspecto.'}
+              else
+                tr
+                  td.text-center(colspan="6") Enfermería no ha tomado signos vitales para esta internación.
+
+      // PROCEDER AL ALTA HOSPITALARIA
+      .tab-pane.fade#alta(role="tabpanel")
+        .alert.alert-warning
+          h5 ⚠️ Atención Médica de Salida
+          p Asegúrese de que el paciente se encuentre clínicamente apto para el egreso institutional. Al confirmar el alta, la internación se dará por concluida y la cama se liberará automáticamente pasando al estado de higiene obligatoria.
+
+        form#formAlta.p-3.border.rounded.bg-white
+          input(type="hidden", name="id_internacion", value=internacion.id_internacion)
+          input(type="hidden", name="id_medico", value="1")
+          
+          .mb-3
+            label.form-label Instrucciones de Cuidado Posterior (En el Hogar)
+            textarea.form-control(name="instrucciones_cuidado", rows="3", placeholder="Ej: Reposo por 48hs, evitar esfuerzos físicos...", required=true)
+          .mb-3
+            label.form-label Recetas Médicas / Fármacos de Egreso
+            textarea.form-control(name="recetas_medicas", rows="2", placeholder="Ej: Ibuprofeno 600mg cada 8 horas en caso de dolor por 5 días")
+          .mb-3
+            label.form-label Recomendaciones de Seguimiento Médico
+            input.form-control(type="text", name="recomendaciones_seguimiento", placeholder="Ej: Controlar por consultorio externo de traumatología en 7 días")
+          
+          button.btn.btn-success.btn-lg(type="submit") 
+            i.bi.bi-box-arrow-right.me-1
+            | Confirmar y Procesar Alta Hospitalaria
+          div#msgAlta.mt-2
+
+block scripts
+  script.
+    $(document).ready(function() {
+      function enviarFormularioMedico(idFormulario, url, idMensaje) {
+        $(idFormulario).submit(function(e) {
+          e.preventDefault();
+          const data = $(this).serialize();
+
+          $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+            success: function(res) {
+              $(idMensaje).html(`<div class="alert alert-success">${res.mensaje}</div>`);
+              $(idFormulario)[0].reset();
+              setTimeout(() => {
+                $(idMensaje).html('');
+                window.location.reload();
+              }, 1500);
+            },
+            error: function(xhr) {
+              const err = xhr.responseJSON ? xhr.responseJSON.error : 'Ocurrió un error institucional.';
+              $(idMensaje).html(`<div class="alert alert-danger">${err}</div>`);
+            }
+          });
+        });
+      }
+
+      enviarFormularioMedico('#formDiagnostico', '/medico/diagnostico', '#msgDiagnostico');
+      enviarFormularioMedico('#formTratamiento', '/medico/tratamiento', '#msgTratamiento');
+
+      $('#formAlta').submit(function(e) {
+        e.preventDefault();
+        const data = $(this).serialize();
+
+        $.ajax({
+          url: '/medico/alta',
+          method: 'POST',
+          data: data,
+          success: function(res) {
+            $('#msgAlta').html(`<div class="alert alert-success">${res.mensaje} Redirigiendo...</div>`);
+            setTimeout(() => {
+              window.location.href = '/medico';
+            }, 2000);
+          },
+          error: function(xhr) {
+            const err = xhr.responseJSON ? xhr.responseJSON.error : 'Error al procesar alta.';
+            $('#msgAlta').html(`<div class="alert alert-danger">${err}</div>`);
+          }
+        });
+      });
+    });
