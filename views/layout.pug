@@ -21,11 +21,15 @@ html
     .sidebar
       .text-center.mb-4
         img(src="/img/iconhospital.jpg", alt="Logo", width="45", height="45", class="mb-2 rounded")
-        h5 Sistema Hospital San Carlos 
+        h5.text-white Sistema Hospital San Carlos 
+      
       nav.nav.flex-column
+        // --- SECCIÓN INICIO ---
         a.nav-link.text-white(class=activePage == '/' ? 'fw-bold text-primary' : '', href='/')
           i.bi.bi-house-door.me-2
           | Inicio 
+
+        small.text-muted.px-3.text-uppercase.fw-bold.mt-3.mb-1 Gestión Hospitalaria
 
         a.nav-link.text-white(class=activePage == '/pacientes' ? 'fw-bold text-primary' : '', href='/pacientes')
           i.bi.bi-people-fill.me-2
@@ -35,66 +39,48 @@ html
           i.bi.bi-journal-plus.me-2
           | Admisión 
 
-        .dropdown
-          button.btn.btn-outline-light.w-100.text-start.mb-2(type='button', data-bs-toggle='dropdown', aria-expanded='false')
-            i.bi.bi-door-closed-fill.me-2
-            | Internación 
-          ul.dropdown-menu
-            li
-              a.dropdown-item(href='/internacion/nueva')
-                i.bi.bi-plus-circle.me-2
-                | Nueva Internación 
-            li
-              a.dropdown-item(href='/internacion/listado')
-                i.bi.bi-table.me-2
-                | Listado de Internaciones 
+        a.nav-link.text-white(class=activePage == '/internacion/nueva' ? 'fw-bold text-primary' : '', href='/internacion/nueva')
+          i.bi.bi-plus-circle.me-2
+          | Nueva Internación
 
-        // Emergencia
-        .dropdown
-          button.btn.btn-outline-danger.w-100.text-start.mb-2(type='button', data-bs-toggle='dropdown', aria-expanded='false')
-            i.bi.bi-exclamation-triangle-fill.me-2
-            | Emergencia 
-          ul.dropdown-menu
-            li
-              a.dropdown-item(href='/emergencia/crear')
-                i.bi.bi-person-fill-add.me-2
-                | Crear Paciente NN 
+        a.nav-link.text-white(class=activePage == '/internacion/listado' ? 'fw-bold text-primary' : '', href='/internacion/listado')
+          i.bi.bi-table.me-2
+          | Listado Internaciones
 
-        hr.bg-light
+        // --- SECCIÓN MÓDULOS CLÍNICOS ---
+        small.text-muted.px-3.text-uppercase.fw-bold.mt-4.mb-1 Módulos Clínicos
 
-        // Módulos Clínicos Actualizados
-        .dropdown
-          button.btn.btn-outline-light.w-100.text-start(type='button', data-bs-toggle='dropdown', aria-expanded='false')
-            i.bi.bi-grid-3x3-gap.me-2
-            | Módulos 
-          ul.dropdown-menu
-            li
-              a.dropdown-item(href='/enfermeria')
-                i.bi.bi-clipboard-pulse.me-2
-                | Enfermería 
-            li
-              a.dropdown-item(href='/medico')
-                i.bi.bi-stethoscope.me-2
-                | Evaluación Médica 
-            li
-              hr.dropdown-divider
-            li
-              a.dropdown-item(href='/historial-medico')
-                i.bi.bi-clock-history.me-2
-                | Historial Médico 
-            li
-              a.dropdown-item(href='/cuidados-enfermeria')
-                i.bi.bi-heart-pulse.me-2
-                | Cuidados Enfermería 
+        a.nav-link.text-white(class=activePage == '/enfermeria' ? 'fw-bold text-primary' : '', href='/enfermeria')
+          i.bi.bi-clipboard-pulse.me-2
+          | Enfermería 
+
+        a.nav-link.text-white(class=activePage == '/medico' ? 'fw-bold text-primary' : '', href='/medico')
+          i.bi.bi-stethoscope.me-2
+          | Evaluación Médica 
+
+        a.nav-link.text-white(class=activePage == '/cuidados-enfermeria' ? 'fw-bold text-primary' : '', href='/cuidados-enfermeria')
+          i.bi.bi-heart-pulse.me-2
+          | Cuidados Enfermería 
+
+        a.nav-link.text-white(class=activePage == '/medico/historial' ? 'fw-bold text-primary' : '', href='/medico/historial')
+          i.bi.bi-clock-history.me-2
+          | Historial Médico 
+
+        // --- SECCIÓN EMERGENCIAS ---
+        small.text-muted.px-3.text-uppercase.fw-bold.mt-4.mb-1 Alertas
+
+        a.nav-link.text-danger.fw-bold(class=activePage == '/emergencia/crear' ? 'bg-danger text-white rounded mx-2 px-2' : '', href='/emergencia/crear')
+          i.bi.bi-exclamation-triangle-fill.me-2
+          | Crear Paciente NN 
 
     // Contenido principal
     .content
       block content
 
-    // Scripts Base
-    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
-    script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
-    script(src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js")
-    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
+  // Scripts Base
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  script(src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js")
+  script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
 
-    block scripts
+  block scripts

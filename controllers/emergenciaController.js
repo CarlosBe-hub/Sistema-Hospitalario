@@ -16,7 +16,7 @@ exports.vistaFormularioEmergencia = async (req, res) => {
 
     const success = req.query.success === '1';
 
-    res.render('emergencia', { habitaciones, motivos, success });
+    res.render('pacientes/emergencia', { habitaciones, motivos, success });
   } catch (error) {
     console.error('Error al cargar formulario emergencia:', error);
     res.status(500).send('Error al cargar formulario');

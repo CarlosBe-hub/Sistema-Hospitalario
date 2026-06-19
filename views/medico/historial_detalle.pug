@@ -1,0 +1,115 @@
+extends ../layout
+
+block content
+  .container.mt-4.mb-5
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h2
+        i.bi.bi-folder-symlink-fill.me-2.text-primary
+        | Registro Clínico Cerrado - Internación ##{internacion.id_internacion}
+      a.btn.btn-outline-secondary(href="/medico/historial") Volver al archivo
+
+    // Ficha del Paciente y Estadía Pasada
+    .card.mb-4.shadow-sm
+      .card-header.bg-dark.text-white
+        h5.card-title.mb-0 Resumen de Estadía Hospitalaria
+      .card-body.bg-light
+        .row
+          .col-md-3
+            strong Paciente:
+            p #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+          .col-md-3
+            strong Documento (DNI):
+            p #{internacion.Paciente.dni}
+          .col-md-3
+            strong Período de Ingreso:
+            p #{new Date(internacion.fecha_ingreso).toLocaleDateString('es-AR')}
+          .col-md-3
+            strong Período de Salida:
+            p #{new Date(internacion.fecha_salida).toLocaleDateString('es-AR')}
+
+    // Historial acumulado en la internación
+    .row
+      // Columna de Diagnósticos y Tratamientos
+      .col-md-7
+        .card.mb-4.shadow-sm
+          .card-header.bg-secondary.text-white
+            h6.mb-0 Cronología de Evoluciones Médicas
+          .card-body
+            if internacion.Diagnosticos && internacion.Diagnosticos.length > 0
+              each diag in internacion.Diagnosticos
+                .p-3.mb-3.border.rounded.bg-white
+                  small.text-muted.float-end #{new Date(diag.fecha).toLocaleString('es-AR')}
+                  strong Evolución / Diagnóstico:
+                  p #{diag.descripcion}
+                  if diag.pruebas_solicitadas && diag.pruebas_solicitadas !== 'Ninguna'
+                    span.badge.bg-info.text-dark Pruebas: #{diag.pruebas_solicitadas}
+            else
+              p.text-muted No se asentaron diagnósticos de evolución.
+
+        .card.mb-4.shadow-sm
+          .card-header.bg-secondary.text-white
+            h6.mb-0 Indicaciones Terapéuticas Administradas
+          .card-body
+            if internacion.Tratamientos && internacion.Tratamientos.length > 0
+              each trat in internacion.Tratamientos
+                .p-3.mb-3.border.rounded.bg-white
+                  small.text-muted.float-end #{new Date(trat.fecha_indicacion).toLocaleString('es-AR')}
+                  p
+                    strong Medicación: 
+                    | #{trat.medicamentos_dosis || 'Sin cambios'}
+                  if trat.terapias_procedimientos
+                    p
+                      strong Terapias: 
+                      | #{trat.terapias_procedimientos}
+            else
+              p.text-muted No se prescribieron tratamientos farmacológicos específicos.
+
+      .col-md-5
+        .card.mb-4.shadow-sm
+          .card-header.bg-secondary.text-white
+            h6.mb-0 Controles de Signos Vitales
+          .card-body.p-0
+            .table-responsive
+              table.table.table-sm.table-striped.mb-0
+                thead
+                  tr
+                    th Fecha
+                    th P.A.
+                    th F.C.
+                    th Temp
+                tbody
+                  if internacion.SignosVitales && internacion.SignosVitales.length > 0
+                    each sv in internacion.SignosVitales
+                      tr
+                        td #{new Date(sv.fecha_hora).toLocaleDateString('es-AR')}
+                        td #{sv.presion_arterial || 'N/D'}
+                        td #{sv.frecuencia_cardiaca ? sv.frecuencia_cardiaca + ' lpm' : 'N/D'}
+                        td #{sv.temperatura ? sv.temperatura + ' °C' : 'N/D'}
+                  else
+                    tr
+                      td.text-center(colspan="4") Sin registros de enfermería.
+
+    if internacion.AltaMedica
+      .card.shadow.border-success.border-3
+        .card-header.bg-success.text-white
+          h5.mb-0 Documento de Egreso y Cuidado Ambulatorio
+        .card-body
+          .row
+            .col-md-6
+              strong Estado al Egreso:
+              p
+                span.badge.bg-success.fs-6 #{internacion.AltaMedica.estado}
+              strong Fecha Formal de Firma:
+              p #{new Date(internacion.AltaMedica.fecha_salida).toLocaleString('es-AR')}
+              strong Médico Responsable del Alta:
+              p
+                if internacion.AltaMedica.Medico
+                  | Dr/a. #{internacion.AltaMedica.Medico.nombre} #{internacion.AltaMedica.Medico.apellido} (Mat: #{internacion.AltaMedica.Medico.nro_matricula})
+                else
+                  | Dr. Regulador (1)
+            .col-md-6
+              strong Plan de Cuidados Posteriores e Instrucciones de Salida:
+              .p-3.bg-light.border.rounded.white-space-pre-wrap
+                | #{internacion.AltaMedica.instrucciones_cuidados}
+    else
+      .alert.alert-warning No se registran datos adjuntos de alta médica formal.

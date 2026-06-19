@@ -7,6 +7,7 @@ const {
 exports.vistaPacientesInternados = async (req, res) => {
   try {
     const internacionesActivas = await Internacion.findAll({
+      where: { estado: 'Activa' }, 
       include: [
         { model: Paciente, as: 'Paciente' },
         { 

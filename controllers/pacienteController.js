@@ -22,7 +22,7 @@ const verActivos = async (req, res) => {
       };
     });
 
-    res.render('pacientes', {
+    res.render('pacientes/pacientes', {
       pacientes: pacientesProcesados,
       obrasSociales,
       query: req.query

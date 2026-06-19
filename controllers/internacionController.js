@@ -26,7 +26,7 @@ module.exports = {
       const camas = await Cama.findAll();
       const motivos = await MotivoInternacion.findAll();
 
-      res.render("internacion", {
+      res.render("internacion/internacion", {
         pacientes,
         alas,
         habitaciones,
@@ -198,7 +198,7 @@ module.exports = {
         order: [["fecha_ingreso", "DESC"]],
       });
 
-      res.render("internacionListado", { internaciones });
+      res.render("internacion/internacionListado", { internaciones });
     } catch (error) {
       console.error(error);
       res.status(500).send("Error al obtener el listado de internaciones");
@@ -222,7 +222,7 @@ module.exports = {
     const camas = await Cama.findAll();
     const motivos = await MotivoInternacion.findAll();
 
-    res.render("internacion", {
+    res.render("internacion/internacion", {
       pacientes,
       alas,
       habitaciones,

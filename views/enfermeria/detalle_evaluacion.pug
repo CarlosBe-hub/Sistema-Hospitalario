@@ -152,5 +152,63 @@ block content
           div#msgCuidados.mt-2
 
 block scripts
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script.
-    $(document).ready
+    $(document).ready(function() {
+      // Manejo del envío asíncrono para Signos Vitales
+      $('#formSignos').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        $.ajax({
+          url: 'signos-vitales',
+          method: 'POST',
+          data: form.serialize(),
+          success: function(res) {
+            $('#msgSignos').html('<div class="alert alert-success">' + (res.mensaje || 'Signos vitales registrados correctamente.') + '</div>');
+            form.find('button[type="submit"]').remove();
+            form.find('input').attr('readonly', true);
+          },
+          error: function(err) {
+            $('#msgSignos').html('<div class="alert alert-danger">Error al guardar los signos vitales.</div>');
+          }
+        });
+      });
+
+      // Manejo del envío asíncrono para Historial Médico
+      $('#formHistorial').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        $.ajax({
+          url: 'historial',
+          method: 'POST',
+          data: form.serialize(),
+          success: function(res) {
+            $('#msgHistorial').html('<div class="alert alert-success">' + (res.mensaje || 'Historial médico inicial registrado correctamente.') + '</div>');
+            form.find('button[type="submit"]').remove();
+            form.find('input, textarea').attr('readonly', true);
+          },
+          error: function(err) {
+            $('#msgHistorial').html('<div class="alert alert-danger">Error al guardar el historial médico.</div>');
+          }
+        });
+      });
+
+      // Manejo del envío asíncrono para Plan de Cuidados
+      $('#formCuidados').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        $.ajax({
+          url: 'plan-cuidados',
+          method: 'POST',
+          data: form.serialize(),
+          success: function(res) {
+            $('#msgCuidados').html('<div class="alert alert-success">' + (res.mensaje || 'Plan de cuidados registrado exitosamente.') + '</div>');
+            form.find('button[type="submit"]').remove();
+            form.find('textarea').attr('readonly', true);
+          },
+          error: function(err) {
+            $('#msgCuidados').html('<div class="alert alert-danger">Error al guardar el plan de cuidados.</div>');
+          }
+        });
+      });
+    });

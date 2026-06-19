@@ -22,7 +22,7 @@ exports.vistaListado = async (req, res) => {
 
     const motivos = await MotivoAdmision.findAll();
 
-    res.render('admision', { pacientes, admisiones, admisionesActivasJS, motivos });
+    res.render('pacientes/admision', { pacientes, admisiones, admisionesActivasJS, motivos });
   } catch (error) {
     console.error('Error al mostrar admisiones:', error);
     res.status(500).json({ error: 'Error al cargar las admisiones' });

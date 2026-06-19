@@ -1,0 +1,43 @@
+extends ../layout
+
+block content
+  .container.mt-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h2
+        i.bi.bi-archive-fill.me-2.text-secondary
+        | Archivo de Historias Clínicas (Altas)
+      a.btn.btn-outline-primary(href="/medico") Volver al Panel Activo
+
+    table#tablaHistorial.table.table-striped.table-bordered.shadow-sm
+      thead.table-dark
+        tr
+          th Paciente
+          th DNI
+          th Fecha Ingreso
+          th Fecha Egreso
+          th Estado Internación
+          th Acciones
+      tbody
+        each historia in historiales
+          tr
+            td.fw-bold #{historia.Paciente.nombre} #{historia.Paciente.apellido}
+            td #{historia.Paciente.dni}
+            td #{new Date(historia.fecha_ingreso).toLocaleDateString('es-AR')}
+            td #{historia.fecha_salida ? new Date(historia.fecha_salida).toLocaleDateString('es-AR') : 'N/D'}
+            td
+              span.badge.bg-success #{historia.estado}
+            td
+              a.btn.btn-sm.btn-secondary(href=`/medico/historial/${historia.id_internacion}`)
+                i.bi.bi-eye-fill.me-1
+                | Ver Historia Clínica
+
+block scripts
+  script.
+    $(document).ready(function() {
+      $('#tablaHistorial').DataTable({
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        responsive: true
+      });
+    });

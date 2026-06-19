@@ -1,4 +1,4 @@
-extends layout
+extends ../layout
 
 block content
   .container.mt-4
@@ -16,6 +16,7 @@ block content
           th Habitación
           th Cama
           th Estado Cama
+          th Estado Internación
           th Género en la Cama
       tbody
         each internacion in internaciones
@@ -44,23 +45,31 @@ block content
             td
               if internacion.Cama && internacion.Cama.estado === 'Ocupada'
                 span.text-danger 🛏️ Ocupada
-              else if internacion.Cama && internacion.Cama.estado === 'Higienizada'
+              else if internacion.Cama && (internacion.Cama.estado === 'Higienizada' || internacion.Cama.estado === 'Disponible')
                 span.text-warning 🛏️ Higienizada
+              else if internacion.Cama && internacion.Cama.estado === 'para_limpieza'
+                span.text-info 🧽 Para Limpieza
               else if internacion.Cama && internacion.Cama.estado === 'Libre'
                 span.text-success 🛏️ Libre
               else
                 span.text-muted 🛏️ N/D
 
+            td
+              if internacion.estado === 'Finalizada'
+                span.badge.bg-success Alta Firmada
+              else
+                span.badge.bg-primary Activa
+
             - var generoEnCama = internacion.Paciente ? internacion.Paciente.genero : 'N/D'
             td= generoEnCama
 
   hr
-  h5.mt-4 Leyenda:
+  h5.mt-4 Leyenda de Camas:
   p
     span.text-success 🛏️ Libre
-    |  
-    span.text-warning 🛏️ Higienizada
-    |  
+    |   
+    span.text-info 🧽 Para Limpieza
+    |   
     span.text-danger 🛏️ Ocupada
 
   //- CDN DataTables
