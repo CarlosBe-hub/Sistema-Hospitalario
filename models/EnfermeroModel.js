@@ -13,9 +13,18 @@ Enfermero.init({
     type: DataTypes.STRING,
     allowNull: false
   },
-  turno: {
+  apellido: { 
     type: DataTypes.STRING,
     allowNull: false
+  },
+  dni: { 
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  turno: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   nro_matricula: {
     type: DataTypes.STRING,

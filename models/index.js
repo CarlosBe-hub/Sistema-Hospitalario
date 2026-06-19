@@ -110,8 +110,11 @@ Medico.hasMany(Tratamiento, { foreignKey: 'id_medico' });
 AltaMedica.belongsTo(Medico, { foreignKey: 'id_medico' });
 Medico.hasMany(AltaMedica, { foreignKey: 'id_medico' });
 
-Medico.belongsTo(Especializacion, { foreignKey: 'id_especializacion' });
+Medico.belongsTo(Especializacion, { foreignKey: 'id_especializacion', as: 'Especializacion' });
 Especializacion.hasMany(Medico, { foreignKey: 'id_especializacion' });
+
+Medico.belongsTo(Guardia, { foreignKey: 'id_guardia', targetKey: 'id_turno', as: 'guardia' });
+Guardia.hasMany(Medico, { foreignKey: 'id_guardia', sourceKey: 'id_turno' });
 
 // ─────────────────────────────────────────────
 // ENFERMERO

@@ -2,6 +2,7 @@ const {
   Internacion, Paciente, SignosVitales, HistorialMedico, 
   CuidadosEnfermeria, Cama, Habitacion, Enfermero 
 } = require('../models');
+const { Op } = require('sequelize');
 
 // Mostrar panel con pacientes internados
 exports.vistaPacientesInternados = async (req, res) => {
@@ -51,7 +52,7 @@ exports.detallePaciente = async (req, res) => {
   }
 };
 
-// Historial Médico
+// Historial Médico Inicial
 exports.guardarHistorial = async (req, res) => {
   try {
     const { 
@@ -90,7 +91,7 @@ exports.guardarHistorial = async (req, res) => {
   }
 };
 
-// Signos Vitales
+// Control de Signos Vitales
 exports.guardarSignosVitales = async (req, res) => {
   try {
     const { 
@@ -125,7 +126,7 @@ exports.guardarSignosVitales = async (req, res) => {
   }
 };
 
-// Plan de Cuidados
+// Plan de Cuidados Clínicos
 exports.guardarPlanCuidados = async (req, res) => {
   try {
     const { 
@@ -155,5 +156,120 @@ exports.guardarPlanCuidados = async (req, res) => {
   } catch (error) {
     console.error('Error al guardar plan de cuidados:', error);
     res.status(500).json({ error: 'Error al registrar el plan de cuidados' });
+  }
+};
+
+// Renderizar panel principal del Admin
+exports.getGestionEnfermero = async (req, res) => {
+  try {
+    const enfermeros = await Enfermero.findAll({
+      order: [['id_enfermero', 'DESC']]
+    });
+
+    res.render('enfermeria/gestionEnfermero', { 
+      enfermeros,
+      success: req.query.success === '1'
+    });
+  } catch (error) {
+    console.error('Error al obtener la gestión de enfermeros:', error);
+    res.status(500).send('Error al cargar el panel de administración de enfermeros.');
+  }
+};
+
+// Procesar la creación de un nuevo Enfermero 
+exports.crearEnfermero = async (req, res) => {
+  try {
+    const { nombre, apellido, dni, nro_matricula } = req.body;
+
+    const existeMatricula = await Enfermero.findOne({ where: { nro_matricula } });
+    if (existeMatricula) {
+      const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
+      return res.render('enfermero/gestionEnfermero', {
+        enfermeros,
+        errorMsg: `La matrícula '${nro_matricula}' ya está registrada por otro enfermero.`
+      });
+    }
+
+    const existeDni = await Enfermero.findOne({ where: { dni } });
+    if (existeDni) {
+      const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
+      return res.render('enfermero/gestionEnfermero', {
+        enfermeros,
+        errorMsg: `El DNI '${dni}' ya pertenece a un enfermero del sistema.`
+      });
+    }
+
+    await Enfermero.create({
+      nombre,
+      apellido,
+      dni, 
+      nro_matricula,
+      estado: 'Activo'
+    });
+
+    res.redirect('/enfermeria/GestionEnfermero?success=1');
+  } catch (error) {
+    console.error('Error al guardar el nuevo enfermero:', error);
+    res.status(500).send('Error interno del servidor al crear el enfermero.');
+  }
+};
+
+// Hacer la edición de un Enfermero existente
+exports.editarEnfermero = async (req, res) => {
+  try {
+    const { id_enfermero, nombre, apellido, dni, nro_matricula } = req.body;
+
+    const dniRepetido = await Enfermero.findOne({ 
+      where: { dni, id_enfermero: { [Op.ne]: id_enfermero } } 
+    });
+    if (dniRepetido) {
+      const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
+      return res.render('enfermero/gestionEnfermero', {
+        enfermeros,
+        errorMsg: `El DNI '${dni}' ya está registrado por otro enfermero.`
+      });
+    }
+
+    const matriculaRepetida = await Enfermero.findOne({ 
+      where: { nro_matricula, id_enfermero: { [Op.ne]: id_enfermero } } 
+    });
+    if (matriculaRepetida) {
+      const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
+      return res.render('enfermero/gestionEnfermero', {
+        enfermeros,
+        errorMsg: `La matrícula '${nro_matricula}' ya pertenece a otro enfermero.`
+      });
+    }
+
+    await Enfermero.update({
+      nombre,
+      apellido,
+      dni,
+      nro_matricula
+    }, {
+      where: { id_enfermero }
+    });
+
+    res.redirect('/enfermeria/GestionEnfermero?success=1');
+  } catch (error) {
+    console.error('Error al actualizar enfermero:', error);
+    res.status(500).send('Error interno al editar el enfermero.');
+  }
+};
+
+// Cambiar el estado 
+exports.cambiarEstadoEnfermero = async (req, res) => {
+  try {
+    const { id_enfermero, nuevo_estado } = req.body;
+
+    await Enfermero.update(
+      { estado: nuevo_estado },
+      { where: { id_enfermero } }
+    );
+
+    res.redirect('/enfermeria/GestionEnfermero');
+  } catch (error) {
+    console.error('Error al cambiar estado del enfermero:', error);
+    res.status(500).send('Error interno al procesar el estado del profesional.');
   }
 };

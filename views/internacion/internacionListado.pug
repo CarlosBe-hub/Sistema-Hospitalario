@@ -2,6 +2,13 @@ extends ../layout
 
 block content
   .container.mt-4
+    // Alerta para mostrar errores en caso de DNI duplicado
+    #alertaError.alert.alert-danger.alert-dismissible.fade.show.d-none(role="alert")
+      i.bi.bi-exclamation-triangle-fill.me-2
+      strong ¡Error!
+      |  El DNI ingresado ya pertenece a otro paciente registrado en el sistema.
+      button.btn-close(type="button" data-bs-dismiss="alert" aria-label="Close")
+
     h2.mb-4 Listado de Internaciones
 
     table#tablaInternaciones.table.table-bordered
@@ -18,10 +25,16 @@ block content
           th Estado Cama
           th Estado Internación
           th Género en la Cama
+          th Acciones
       tbody
         each internacion in internaciones
           tr
-            td #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+            td
+              if internacion.Paciente && internacion.Paciente.dni.startsWith('NN-')
+                span.badge.bg-danger.me-2 ⚠️ Emergencia NN
+              else
+                | #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+                
             td= internacion.Paciente.dni
             td= internacion.Paciente.genero
 
@@ -63,27 +76,106 @@ block content
             - var generoEnCama = internacion.Paciente ? internacion.Paciente.genero : 'N/D'
             td= generoEnCama
 
+            td
+              if internacion.Paciente && internacion.Paciente.dni.startsWith('NN-')
+                button.btn.btn-sm.btn-warning.btn-identificar(
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalIdentificar"
+                  data-id=internacion.Paciente.id_paciente
+                  data-dni=internacion.Paciente.dni
+                )
+                  i.bi.bi-person-check-fill.me-1
+                  | Identificar
+              else
+                span.text-muted -
+
+    #modalIdentificar.modal.fade(tabindex="-1" aria-labelledby="modalIdentificarLabel" aria-hidden="true")
+      .modal-dialog.modal-md
+        .modal-content
+          .modal-header.bg-warning.text-dark
+            h5#modalIdentificarLabel.modal-title
+              i.bi.bi-person-check-fill.me-2
+              | Identificar Paciente NN
+            button.btn-close(type="button" data-bs-dismiss="modal" aria-label="Close")
+          .modal-body
+            p.text-muted Asigne la identidad real al registro temporal: 
+              strong#textDniTemporal ...
+            
+            form#formIdentificar(method="POST")
+              .row.mb-3
+                .col-md-6
+                  label.form-label.fw-bold Nombre Real
+                  input.form-control(type="text" name="nombre" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
+                .col-md-6
+                  label.form-label.fw-bold Apellido Real
+                  input.form-control(type="text" name="apellido" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
+              .row.mb-3
+                .col-md-6
+                  label.form-label.fw-bold DNI Real
+                  input.form-control(type="number" name="dni" required min="1000000" max="999999999" title="Debe ingresar un DNI válido sin puntos ni espacios")
+                .col-md-6
+                  label.form-label.fw-bold Género
+                  select.form-select(name="genero" required)
+                    option(value="" disabled selected) Seleccione...
+                    option(value="Masculino") Masculino
+                    option(value="Femenino") Femenino
+                    option(value="Otro") Otro
+              .row.mb-3
+                .col-md-4
+                  label.form-label.fw-bold Edad
+                  input.form-control(type="number" name="edad" min="0" max="130")
+                .col-md-8
+                  label.form-label.fw-bold Obra Social
+                  select.form-select(name="id_obra_social")
+                    option(value="") Seleccione... / No Posee
+                    if obrasSociales
+                      each os in obrasSociales
+                        option(value=os.id_obra_social)= os.nombre
+              .mb-3
+                label.form-label.fw-bold Teléfono
+                input.form-control(type="text" name="telefono" pattern="[0-9]{7,15}" title="Ingrese un número de teléfono válido (solo números entre 7 y 15 dígitos)")
+                
+              .modal-footer.pe-0.pb-0
+                button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
+                button.btn.btn-warning.fw-bold(type="submit") Guardar Identidad
+
   hr
   h5.mt-4 Leyenda de Camas:
   p
     span.text-success 🛏️ Libre
-    |   
+    |    
     span.text-info 🧽 Para Limpieza
-    |   
+    |    
     span.text-danger 🛏️ Ocupada
 
-  //- CDN DataTables
+  // CDN DataTables
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
 
-  //- Inicialización del DataTable
+  // Inicialización del DataTable y script del modal
   script.
     $(document).ready(function() {
+      // Verificar errores de duplicación por URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('error') === 'dni_duplicado') {
+        $('#alertaError').alert().removeClass('d-none');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
       $('#tablaInternaciones').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
         pageLength: 10
+      });
+
+      $('#tablaInternaciones tbody').on('click', '.btn-identificar', function() {
+        const idPaciente = $(this).attr('data-id');
+        const dniTemporal = $(this).attr('data-dni');
+
+        $('#textDniTemporal').text(dniTemporal);
+        $('#formIdentificar').attr('action', '/pacientes/identificar/' + idPaciente);
       });
     });

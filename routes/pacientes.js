@@ -20,4 +20,7 @@ router.get('/', PacienteController.verActivos);
 // Ruta para validar si el DNI ya existe
 router.get('/validar-dni/:dni', PacienteController.validarDNI);
 
+// Ruta para procesar la identificación desde el modal del listado de internaciones
+router.post('/identificar/:id', PacienteController.procesarIdentificacionNN);
+
 module.exports = router;

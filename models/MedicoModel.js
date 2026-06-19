@@ -30,7 +30,13 @@ Medico.init({
     type: DataTypes.STRING,
     allowNull: false,
     defaultValue: 'Activo' // o 'Inactivo'
-  }
+  },
+  dni: {
+  type: DataTypes.STRING,
+  allowNull: false,
+  unique: true
+},
+
 }, {
   sequelize,
   modelName: 'Medico',

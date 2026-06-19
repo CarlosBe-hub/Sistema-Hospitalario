@@ -47,6 +47,10 @@ html
           i.bi.bi-table.me-2
           | Listado Internaciones
 
+        a.nav-link(href="/habitaciones/mapa")
+            i.bi.bi-grid-3x3-gap-fill.me-2
+            | Gestion De Habitaciones
+
         // --- SECCIÓN MÓDULOS CLÍNICOS ---
         small.text-muted.px-3.text-uppercase.fw-bold.mt-4.mb-1 Módulos Clínicos
 
@@ -71,7 +75,17 @@ html
 
         a.nav-link.text-danger.fw-bold(class=activePage == '/emergencia/crear' ? 'bg-danger text-white rounded mx-2 px-2' : '', href='/emergencia/crear')
           i.bi.bi-exclamation-triangle-fill.me-2
-          | Crear Paciente NN 
+          | Crear Paciente NN
+
+        small.text-muted.px-3.text-uppercase.fw-bold.mt-4.mb-1 Administración
+
+        a.nav-link.text-white(class=activePage == '/medico/GestionMedico' ? 'fw-bold text-primary' : '', href='/medico/GestionMedico')
+          i.bi.bi-person-vcard.me-2
+          | Gestionar Médicos
+
+        a.nav-link.text-white(class=activePage == '/enfermero/GestionEnfermero' ? 'fw-bold text-primary' : '', href='/enfermeria/gestionEnfermero')
+          i.bi.bi-person-badge.me-2
+          | Gestionar Enfermeros 
 
     // Contenido principal
     .content

@@ -5,6 +5,7 @@ const Cama = require("../models/CamaModel");
 const Ala = require("../models/AlaModel");
 const MotivoInternacion = require("../models/MotivoInternacionModel");
 const Admisiones = require("../models/AdmisionModel");
+const ObraSocial = require("../models/ObraSocialModel");
 const { Op } = require("sequelize");
 
 module.exports = {
@@ -168,7 +169,7 @@ module.exports = {
           {
             model: Paciente,
             as: "Paciente",
-            attributes: ["nombre", "apellido", "dni", "genero"],
+            attributes: ["id_paciente", "nombre", "apellido", "dni", "genero"],
           },
           {
             model: Cama,
@@ -198,7 +199,12 @@ module.exports = {
         order: [["fecha_ingreso", "DESC"]],
       });
 
-      res.render("internacion/internacionListado", { internaciones });
+      const obrasSociales = await ObraSocial.findAll({ order: [['nombre', 'ASC']] });
+
+      res.render("internacion/internacionListado", { 
+        internaciones,
+        obrasSociales 
+      });
     } catch (error) {
       console.error(error);
       res.status(500).send("Error al obtener el listado de internaciones");

@@ -1,0 +1,196 @@
+extends ../layout
+
+block content
+  .container-fluid.mt-4.px-4
+    h2.mb-3 Gestión de Médicos
+
+    // Cartel de Alerta de Validación (Errores del Backend)
+    if errorMsg
+      .alert.alert-danger.alert-dismissible.fade.show(role="alert")
+        i.bi.bi-exclamation-octagon-fill.me-2
+        strong ¡Error! 
+        | #{errorMsg}
+        button.btn-close(type="button" data-bs-dismiss="alert")
+
+    .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1080;")
+      #toastSuccess.toast.align-items-center.text-white.bg-success.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+        .d-flex
+          .toast-body
+            i.bi.bi-check-circle-fill.me-2
+            | Operación realizada con éxito. El registro médico fue guardado correctamente.
+          button.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
+
+    button.btn.btn-primary.mb-4#btnNuevoMedico(data-bs-toggle="modal", data-bs-target="#modalMedico")
+      | + Nuevo Médico
+
+    // Tabla de Médicos
+    .table-responsive
+      table#tablaMedicos.table.table-striped.table-hover.align-middle
+        thead.table-light
+          tr
+            th ID
+            th DNI
+            th Nombre y Apellido
+            th Matrícula
+            th Especialidad
+            th Guardia
+            th Estado
+            th Acciones
+        tbody
+          if medicos
+            each medico in medicos
+              tr
+                td= medico.id_medico
+                td.fw-bold= medico.dni
+                td #{medico.nombre} #{medico.apellido}
+                td= medico.nro_matricula
+                td= medico.especializacion
+                td= medico.guardia ? medico.guardia.nombre_guardia : "-"
+                td
+                  span(class=medico.estado === 'Activo' ? 'text-success' : 'text-danger')= medico.estado
+                td
+                  button.btn.btn-sm.btn-warning.text-dark.me-1.btn-editar(
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalMedico"
+                    data-id=medico.id_medico
+                    data-nombre=medico.nombre
+                    data-apellido=medico.apellido
+                    data-dni=medico.dni
+                    data-matricula=medico.nro_matricula
+                    data-especialidad=medico.id_especializacion
+                    data-guardia=medico.id_guardia
+                  )
+                    i.bi.bi-pencil-square.me-1
+                    | Editar
+                  
+                  form(method="POST" action="/medico/cambiar-estado" style="display:inline;")
+                    input(type="hidden" name="_method" value="PATCH")
+                    input(type="hidden" name="id_medico" value=medico.id_medico)
+                    if medico.estado === 'Activo'
+                      input(type="hidden" name="nuevo_estado" value="Inactivo")
+                      button.btn.btn-sm.btn-danger(type="submit" title="Dar de baja")
+                        i.bi.bi-toggle-on.me-1
+                        | Dar de baja
+                    else
+                      input(type="hidden" name="nuevo_estado" value="Activo")
+                      button.btn.btn-sm.btn-success(type="submit" title="Restaurar")
+                        i.bi.bi-toggle-off.me-1
+                        | Restaurar
+
+  // Modal unico para Registrar / Editar Médico
+  .modal.fade#modalMedico(tabindex="-1" aria-hidden="true")
+    .modal-dialog
+      .modal-content
+        .modal-header#modalHeader.bg-primary.text-white
+          h5.modal-title#modalTitulo Registrar Nuevo Médico
+          button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
+        
+        form.needs-validation#formMedico(action="/medico/crear" method="POST" novalidate)
+          input(type="hidden" name="id_medico" id="inputIdMedico")
+          
+          .modal-body
+            .row.mb-3
+              .col-md-6
+                label.form-label.fw-bold Nombre
+                input.form-control#inputNombre(type="text" name="nombre" required pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")
+                .invalid-feedback Solo letras.
+              .col-md-6
+                label.form-label.fw-bold Apellido
+                input.form-control#inputApellido(type="text" name="apellido" required pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")
+                .invalid-feedback Solo letras.
+            
+            .row.mb-3
+              .col-md-6
+                label.form-label.fw-bold DNI (Sin puntos)
+                input.form-control#inputDni(type="text" name="dni" required pattern="[0-9]{7,9}" maxlength="9")
+                .invalid-feedback DNI inválido.
+              .col-md-6
+                label.form-label.fw-bold Matrícula
+                input.form-control#inputMatricula(type="text" name="nro_matricula" required)
+                .invalid-feedback Requerido.
+            
+            .row.mb-3
+              .col-md-6
+                label.form-label.fw-bold Especialidad
+                select.form-select#selectEspecialidad(name="id_especializacion" required)
+                  option(value="" disabled selected) Seleccionar...
+                  if especializaciones
+                    each esp in especializaciones
+                      option(value=esp.id_especializacion)= esp.nombre
+                .invalid-feedback Seleccione especialidad.
+              
+              .col-md-6
+                label.form-label.fw-bold Turno / Guardia
+                select.form-select#selectGuardia(name="id_guardia" required)
+                  option(value="" disabled selected) Seleccionar Guardia...
+                  if guardias
+                    each guardia in guardias
+                      option(value=guardia.id_turno)= guardia.nombre_guardia + " (" + guardia.hora_inicio + " - " + guardia.hora_fin + ")"
+                .invalid-feedback Seleccione un turno.
+
+          .modal-footer
+            button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cerrar
+            button.btn.btn-primary(type="submit" id="btnGuardar") Guardar Médico
+
+block scripts
+  script.
+    $(document).ready(function() {
+      // Inicializar DataTable
+      $('#tablaMedicos').DataTable({
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+      });
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success') === '1') {
+        const toastElement = document.getElementById('toastSuccess');
+        if (toastElement) {
+          const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+          toast.show();
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      const modal = document.getElementById('modalMedico');
+      modal.addEventListener('show.bs.modal', function (event) {
+        const boton = event.relatedTarget; 
+        
+        if (boton.classList.contains('btn-editar')) {
+          $('#modalTitulo').text('Editar Médico');
+          $('#modalHeader').removeClass('bg-primary').addClass('bg-warning text-dark');
+          $('.btn-close').removeClass('btn-close-white');
+          $('#formMedico').attr('action', '/medico/editar');
+          
+          $('#inputIdMedico').val(boton.getAttribute('data-id'));
+          $('#inputNombre').val(boton.getAttribute('data-nombre'));
+          $('#inputApellido').val(boton.getAttribute('data-apellido'));
+          $('#inputDni').val(boton.getAttribute('data-dni'));
+          $('#inputMatricula').val(boton.getAttribute('data-matricula'));
+          $('#selectEspecialidad').val(boton.getAttribute('data-especialidad'));
+          $('#selectGuardia').val(boton.getAttribute('data-guardia'));
+        } else {
+          $('#modalTitulo').text('Registrar Nuevo Médico');
+          $('#modalHeader').removeClass('bg-warning text-dark').addClass('bg-primary text-white');
+          $('.btn-close').addClass('bg-close-white');
+          $('#formMedico').attr('action', '/medico/crear');
+          
+          $('#inputIdMedico').val('');
+          $('#formMedico')[0].reset();
+        }
+      });
+
+      // Validaciones visuales de Bootstrap en el formulario
+      (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+          }, false);
+        });
+      })();
+    });

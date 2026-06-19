@@ -37,6 +37,7 @@ app.use('/internacion', internacionRoutes);
 app.use('/emergencia', emergenciaRoutes); 
 app.use('/medico', medicoRoutes);         
 app.use('/enfermeria', enfermeriaRoutes); 
+app.use('/habitaciones', require('./routes/habitaciones'));
 
 // Ruta principal
 app.get('/', (req, res) => {

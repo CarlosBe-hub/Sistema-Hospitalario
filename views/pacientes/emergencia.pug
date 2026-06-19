@@ -2,48 +2,79 @@ extends ../layout
 
 block content
   .container.mt-5
-    h2.text-danger.mb-4
-      i.bi.bi-person-fill-add.me-2
-      | Crear Paciente NN (Emergencia)
+    .row.justify-content-center
+      .col-md-8
+        .card.shadow-sm.border-danger
+          .card-header.bg-danger.text-white.py-3
+            h4.mb-0
+              i.bi.bi-person-fill-exclamation.me-2
+              | Crear Paciente NN (Emergencia)
+          
+          .card-body.p-4
+            .alert.alert-warning.mb-4
+              i.bi.bi-info-circle-fill.me-2
+              | Se creará un registro temporal. El sistema buscará y asignará automáticamente la primera cama libre en la habitación que seleccione.
 
-    if success
-      .alert.alert-success Paciente de emergencia creado correctamente.
+            if error
+              .alert.alert-danger= error
 
-    if error
-      .alert.alert-danger= error
+            form(action='/emergencia/crear', method='POST')
+              .row.mb-3
+                .col-md-6
+                  label.form-label.fw-bold(for='id_motivo') Motivo de Internación
+                  select.form-select(name='id_motivo', required)
+                    option(value='') Selecciona un motivo
+                    each motivo in motivos
+                      option(
+                        value=motivo.id_motivo, 
+                        selected=(typeof id_motivo !== 'undefined' && id_motivo == motivo.id_motivo)
+                      )= motivo.descripcion
 
-    form(action='/emergencia/crear', method='POST')
-      .row.mb-3
-        .col-md-6
-          label.form-label(for='diagnostico') Motivo de Internación
-          input.form-control(
-            type='text', 
-            name='diagnostico', 
-            required, 
-            value=(typeof diagnostico !== 'undefined' ? diagnostico : '')
-          )
+                .col-md-6
+                  label.form-label.fw-bold(for='id_habitacion') Habitación
+                  select.form-select(name='id_habitacion', required)
+                    option(value='') Selecciona una habitación
+                    each habitacion in habitaciones
+                      option(
+                        value=habitacion.id_habitacion, 
+                        selected=(typeof id_habitacion !== 'undefined' && id_habitacion == habitacion.id_habitacion)
+                      )= `Habitación ${habitacion.numero}`
 
-        .col-md-6
-          label.form-label(for='id_habitacion') Habitación
-          select.form-select(name='id_habitacion', required)
-            option(value='') Selecciona una habitación
-            each habitacion in habitaciones
-              option(
-                value=habitacion.id_habitacion, 
-                selected=(typeof id_habitacion !== 'undefined' && id_habitacion == habitacion.id_habitacion)
-              )= habitacion.numero
+              .row.mb-4
+                .col-md-12
+                  label.form-label.fw-bold(for='diagnostico') Diagnóstico (opcional)
+                  input.form-control(
+                    type='text', 
+                    name='diagnostico', 
+                    placeholder='Observaciones iniciales del ingreso...',
+                    value=(typeof diagnostico !== 'undefined' ? diagnostico : '')
+                  )
 
-      .row.mb-3
-        .col-md-6
-          label.form-label(for='id_motivo') Diagnostico (opcional)
-          select.form-select(name='id_motivo')
-            option(value='') Selecciona un motivo
-            each motivo in motivos
-              option(
-                value=motivo.id_motivo, 
-                selected=(typeof id_motivo !== 'undefined' && id_motivo == motivo.id_motivo)
-              )= motivo.descripcion
+              .d-flex.justify-content-end.border-top.pt-3
+                button.btn.btn-danger.fw-bold.px-4(type='submit')
+                  i.bi.bi-hospital.me-2
+                  | Crear e Internar Paciente NN
 
-      button.btn.btn-danger(type='submit')
-        i.bi.bi-save.me-2
-        | Crear e Internar Paciente NN
+  .position-fixed.bottom-0.end-0.p-3(style='z-index: 1055')
+    .toast#emergenciaToast.border-0(role='alert', aria-live='assertive', aria-atomic='true')
+      .toast-header.bg-success.text-white
+        i.bi.bi-check-circle-fill.me-2
+        strong.me-auto Ingreso Exitoso
+        small Ahora
+        button.btn-close.btn-close-white(type='button', data-bs-dismiss='toast' aria-label="Close")
+      .toast-body.bg-light#toastBodyMensaje
+        | El paciente de emergencia fue ingresado y se le asignó una cama automáticamente.
+
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function () {
+      const params = new URLSearchParams(window.location.search);
+      
+      if (params.get('success') === '1') {
+        const toastEl = document.getElementById('emergenciaToast');
+        const toast = new bootstrap.Toast(toastEl, { delay: 5000 }); // Desaparece a los 5 seg
+        toast.show();
+        
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });

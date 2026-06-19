@@ -1,8 +1,9 @@
 const { 
   Internacion, Paciente, Diagnostico, Tratamiento, 
-  AltaMedica, SignosVitales, Cama, Habitacion, Medico
+  AltaMedica, SignosVitales, Cama, Habitacion, Medico, Especializacion, Guardia 
 } = require('../models');
 const { Op } = require('sequelize');
+
 
 // Mostrar panel principal con pacientes internados
 exports.vistaPacientesInternados = async (req, res) => {
@@ -151,7 +152,7 @@ exports.darAlta = async (req, res) => {
       id_medico,              
       fecha_salida: new Date(), 
       estado: 'Finalizado',     
-      instrucciones_cuidados: todasLasInstrucciones
+      instructions_cuidados: todasLasInstrucciones
     });
 
     await internacion.update({
@@ -166,7 +167,6 @@ exports.darAlta = async (req, res) => {
       }
     }
 
-    // Si tu tabla de internación guarda el id_admision
     if (internacion.id_admision) {
         const { Admisiones } = require('../models'); 
         const admision = await Admisiones.findByPk(internacion.id_admision);
@@ -239,5 +239,140 @@ exports.detalleHistorial = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener el detalle del historial:', error);
     res.status(500).send('Error al cargar la historia clínica retrospectiva.');
+  }
+};
+
+// Renderizar panel principal del Admin
+exports.getGestionMedico = async (req, res) => {
+  try {
+    const medicos = await Medico.findAll({
+      include: [{ model: Guardia, as: 'guardia' }],
+      order: [['id_medico', 'DESC']]
+    });
+
+    const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
+    const guardias = await Guardia.findAll({ order: [['nombre_guardia', 'ASC']] });
+
+    res.render('medico/gestionMedico', { 
+      medicos, 
+      especializaciones,
+      guardias, 
+      success: req.query.success === '1'
+    });
+  } catch (error) {
+    console.error("Error al cargar la gestión de médicos:", error);
+    res.status(500).send("Error del servidor");
+  }
+};
+
+// Procesar la creación de un nuevo Médico 
+exports.crearMedico = async (req, res) => {
+  try {
+    const { nombre, apellido, dni, nro_matricula, id_especializacion, id_guardia } = req.body;
+
+    const existeMatricula = await Medico.findOne({ where: { nro_matricula } });
+    if (existeMatricula) {
+      const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
+      const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      return res.render('medico/gestionMedico', {
+        medicos, especializaciones, guardias,
+        errorMsg: `La matrícula '${nro_matricula}' ya está registrada por otro médico.`
+      });
+    }
+
+    const existeDni = await Medico.findOne({ where: { dni } });
+    if (existeDni) {
+      const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
+      const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      return res.render('medico/gestionMedico', {
+        medicos, especializaciones, guardias,
+        errorMsg: `El DNI '${dni}' ya pertenece a un médico del sistema.`
+      });
+    }
+
+    await Medico.create({
+      nombre,
+      apellido,
+      dni, 
+      nro_matricula,
+      especializacion: req.body.especializacion || 'General',
+      id_especializacion: id_especializacion ? parseInt(id_especializacion) : null,
+      id_guardia: id_guardia ? parseInt(id_guardia) : null,
+      estado: 'Activo'
+    });
+
+    res.redirect('/medico/GestionMedico?success=1');
+  } catch (error) {
+    console.error('Error al guardar el nuevo médico:', error);
+    res.status(500).send('Error interno del servidor al crear el médico.');
+  }
+};
+
+// Procesar la edición de un Médico existente
+exports.editarMedico = async (req, res) => {
+  try {
+    const { id_medico, nombre, apellido, dni, nro_matricula, id_especializacion, id_guardia } = req.body;
+
+    const dniRepetido = await Medico.findOne({ 
+      where: { dni, id_medico: { [Op.ne]: id_medico } } 
+    });
+    if (dniRepetido) {
+      const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
+      const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      return res.render('medico/gestionMedico', {
+        medicos, especializaciones, guardias,
+        errorMsg: `El DNI '${dni}' ya está registrado por otro médico.`
+      });
+    }
+
+    const matriculaRepetida = await Medico.findOne({ 
+      where: { nro_matricula, id_medico: { [Op.ne]: id_medico } } 
+    });
+    if (matriculaRepetida) {
+      const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
+      const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      return res.render('medico/gestionMedico', {
+        medicos, especializaciones, guardias,
+        errorMsg: `La matrícula '${nro_matricula}' ya pertenece a otro médico.`
+      });
+    }
+
+    // Ejecutar actualización
+    await Medico.update({
+      nombre,
+      apellido,
+      dni,
+      nro_matricula,
+      id_especializacion: id_especializacion ? parseInt(id_especializacion) : null,
+      id_guardia: id_guardia ? parseInt(id_guardia) : null
+    }, {
+      where: { id_medico }
+    });
+
+    res.redirect('/medico/GestionMedico?success=1');
+  } catch (error) {
+    console.error('Error al actualizar médico:', error);
+    res.status(500).send('Error interno al editar el médico.');
+  }
+};
+
+// Cambiar el estado 
+exports.cambiarEstadoMedico = async (req, res) => {
+  try {
+    const { id_medico, nuevo_estado } = req.body;
+
+    await Medico.update(
+      { estado: nuevo_estado },
+      { where: { id_medico } }
+    );
+
+    res.redirect('/medico/GestionMedico');
+  } catch (error) {
+    console.error('Error al cambiar estado del médico:', error);
+    res.status(500).send('Error interno al procesar la baja/restauración del profesional.');
   }
 };
