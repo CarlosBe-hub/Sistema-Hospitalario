@@ -1,8 +1,16 @@
 extends ../layout
 
 block content
+  .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1080;")
+    #toastSuccess.toast.align-items-center.text-white.bg-success.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-check-circle-fill.me-2
+          | La internación hospitalaria del paciente fue registrada con éxito.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
+
   .container.mt-4
-    // Alerta para mostrar errores en caso de DNI duplicado
+    // Mensaje de para avisar de dni 
     #alertaError.alert.alert-danger.alert-dismissible.fade.show.d-none(role="alert")
       i.bi.bi-exclamation-triangle-fill.me-2
       strong ¡Error!
@@ -140,14 +148,14 @@ block content
                 button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
                 button.btn.btn-warning.fw-bold(type="submit") Guardar Identidad
 
-  hr
-  h5.mt-4 Leyenda de Camas:
-  p
-    span.text-success 🛏️ Libre
-    |    
-    span.text-info 🧽 Para Limpieza
-    |    
-    span.text-danger 🛏️ Ocupada
+    hr
+    h5.mt-4 Leyenda de Camas:
+    p
+      span.text-success 🛏️ Libre
+      |     
+      span.text-info 🧽 Para Limpieza
+      |     
+      span.text-danger 🛏️ Ocupada
 
   // CDN DataTables
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
@@ -161,6 +169,15 @@ block content
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('error') === 'dni_duplicado') {
         $('#alertaError').alert().removeClass('d-none');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      if (urlParams.get('success') === '1') {
+        const toastElement = document.getElementById('toastSuccess');
+        if (toastElement) {
+          const toast = new bootstrap.Toast(toastElement, { delay: 4500 });
+          toast.show();
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 

@@ -1,19 +1,39 @@
 extends ../layout
 
 block content
+  .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1080;")
+    #toastSuccess.toast.align-items-center.text-white.bg-success.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-check-circle-fill.me-2
+          span#toastMensajeTexto Operación realizada con éxito.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
+
   .container.mt-4
+    if error
+      .alert.alert-danger.alert-dismissible.fade.show.mb-4(role="alert", style="border: 2px solid darkred;")
+        i.bi.bi-exclamation-triangle-fill.me-2
+        strong ¡Atención!
+        |  #{error}
+        button.btn-close(type="button", data-bs-dismiss="alert", aria-label="Close")
+
     h2.mb-4 Nueva Internación
 
     form(method="POST", action="/internacion/crear", id="form-internacion")
+      
       .mb-3
-        label.form-label(for="id_paciente") Paciente:
+        label.form-label.fw-bold(for="inputBuscarDni") Buscar Paciente por DNI:
+        .input-group
+          input.form-control#inputBuscarDni(type="text", placeholder="Ingrese DNI (Ej: 38123456)")
+          button.btn.btn-secondary#btnBuscarDni(type="button") Buscar
+        small.text-danger#mensajeErrorDni(style="display:none;")
+
+      .mb-3
+        label.form-label(for="id_paciente") Paciente Encontrado:
         select.form-select(name="id_paciente", id="id_paciente", required)
-          option(value="" disabled selected) Seleccionar paciente
-          each paciente in pacientes
-            option(
-              value=paciente.id_paciente 
-              selected=(datosPrevios && datosPrevios.id_paciente == paciente.id_paciente)
-            )= paciente.nombre + ' ' + paciente.apellido
+          option(value="" disabled selected) -- Realice la búsqueda --
+          if datosPrevios && datosPrevios.id_paciente
+            option(value=datosPrevios.id_paciente selected) Paciente pre-seleccionado
         small.text-danger#error-paciente
 
       .mb-3
@@ -61,9 +81,6 @@ block content
 
       button.btn.btn-primary(type="submit") Internar Paciente
 
-  if error
-    .alert.alert-danger.mt-4 #{error}
-
   script.
     const habitaciones = !{JSON.stringify(habitaciones)};
     const camas = !{JSON.stringify(camas)};
@@ -72,6 +89,51 @@ block content
     const habSelect = document.getElementById('habitacion-select');
     const camaSelect = document.getElementById('cama-select');
     const alaSelect = document.getElementById('ala-select');
+    
+    const btnBuscarDni = document.getElementById('btnBuscarDni');
+    const inputBuscarDni = document.getElementById('inputBuscarDni');
+    const selectPaciente = document.getElementById('id_paciente');
+    const mensajeErrorDni = document.getElementById('mensajeErrorDni');
+    const toastElement = document.getElementById('toastSuccess');
+    const toastMensajeTexto = document.getElementById('toastMensajeTexto');
+
+    btnBuscarDni.addEventListener('click', async () => {
+      const dni = inputBuscarDni.value.trim();
+
+      if (!dni) {
+        mensajeErrorDni.textContent = 'Ingrese un DNI válido.';
+        mensajeErrorDni.style.display = 'block';
+        return;
+      }
+
+      mensajeErrorDni.style.display = 'none';
+      selectPaciente.innerHTML = '<option value="" disabled selected>Buscando...</option>';
+      clearError('paciente');
+
+      try {
+        const response = await fetch(`/internacion/buscarPaciente?dni=${dni}`);
+        const data = await response.json();
+
+        if (data.success) {
+          const p = data.paciente;
+          selectPaciente.innerHTML = `<option value="${p.id_paciente}" selected>${p.nombre} ${p.apellido} (DNI: ${p.dni})</option>`;
+          
+          toastMensajeTexto.textContent = `Paciente ${p.nombre} ${p.apellido} encontrado con una admisión activa.`;
+          const toast = new bootstrap.Toast(toastElement, { delay: 3500 });
+          toast.show();
+
+        } else {
+          selectPaciente.innerHTML = '<option value="" disabled selected>-- Realice la búsqueda --</option>';
+          mensajeErrorDni.textContent = data.message;
+          mensajeErrorDni.style.display = 'block';
+        }
+      } catch (error) {
+        console.error("Error en la búsqueda:", error);
+        mensajeErrorDni.textContent = 'Error de conexión al buscar el paciente.';
+        mensajeErrorDni.style.display = 'block';
+        selectPaciente.innerHTML = '<option value="" disabled selected>-- Realice la búsqueda --</option>';
+      }
+    });
 
     function limpiarSelect(select, label) {
       select.innerHTML = '';
@@ -127,7 +189,6 @@ block content
       clearError('habitacion');
     });
 
-    // Si hay datos previos, cargar selects correspondientes
     if (datosPrevios.id_ala) {
       cargarHabitaciones(datosPrevios.id_ala);
     }
@@ -135,7 +196,6 @@ block content
       cargarCamas(datosPrevios.id_habitacion);
     }
 
-    // Validación al enviar
     document.getElementById('form-internacion').addEventListener('submit', function (e) {
       const paciente = document.getElementById('id_paciente').value;
       const fechaIngreso = document.getElementById('fecha_ingreso').value;
@@ -147,7 +207,7 @@ block content
       let errores = 0;
 
       if (!paciente) {
-        showError('paciente', 'Debe seleccionar un paciente.');
+        showError('paciente', 'Debe buscar y seleccionar un paciente.');
         errores++;
       }
 

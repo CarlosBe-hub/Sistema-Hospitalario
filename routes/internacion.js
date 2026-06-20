@@ -10,6 +10,8 @@ router.get('/', (req, res) => {
 // Formulario de nueva internación
 router.get('/nueva', InternacionController.formNuevaInternacion);
 
+router.get('/buscarPaciente', InternacionController.buscarPacienteDni);
+
 // Crear internación
 router.post('/crear', InternacionController.crearInternacion);
 
