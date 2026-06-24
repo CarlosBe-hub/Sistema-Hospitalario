@@ -29,12 +29,16 @@ const verActivos = async (req, res) => {
       errorMsg = 'No se puede actualizar: El DNI ya pertenece a otro paciente.';
     } else if (req.query.error === 'campos_obligatorios') {
       errorMsg = 'Faltan campos obligatorios para registrar al paciente.';
+    } else if (req.query.error === 'paciente_internado') {
+      errorMsg = 'No se puede cambiar el estado a Inactivo: El paciente se encuentra actualmente internado en una habitación.';
+    } else if (req.query.error === 'paciente_admitido') {
+      errorMsg = 'No se puede cambiar el estado a Inactivo: El paciente posee una admisión activa en curso.';
     }
 
     res.render('pacientes/pacientes', {
       pacientes: pacientesProcesados,
       obrasSociales,
-      errorMsg,
+      errorMsg, 
       query: req.query
     });
   } catch (error) {
@@ -116,7 +120,7 @@ const mostrarFormularioEditar = async (req, res) => {
 
     const obrasSociales = await ObraSocial.findAll();
 
-    res.render('editarPaciente', { paciente, obrasSociales });
+    res.render('pacientes/editarPaciente', { paciente, obrasSociales });
   } catch (error) {
     console.error('Error al mostrar formulario de edición:', error);
     res.status(500).send('Error al mostrar formulario');
@@ -152,6 +156,26 @@ const actualizarPaciente = async (req, res) => {
       return res.redirect('/pacientes?error=dni_edicion');
     }
 
+    if (estado === 'Inactivo') {
+      const { Internacion, Admision } = require('../models');
+
+      // Verificar si el paciente está actualmente durmiendo en una cama activa
+      const internado = await Internacion.findOne({ 
+        where: { id_paciente: id, estado: 'Activa' } 
+      });
+      if (internado) {
+        return res.redirect('/pacientes?error=paciente_internado');
+      }
+
+      // Verificar si tiene una admisión activa 
+      const admitido = await Admision.findOne({ 
+        where: { id_paciente: id, estado: 'activo' } 
+      });
+      if (admitido) {
+        return res.redirect('/pacientes?error=paciente_admitido');
+      }
+    }
+
     const idObraSocial =
       id_obra_social === "null" || id_obra_social === ""
         ? null
@@ -169,7 +193,7 @@ const actualizarPaciente = async (req, res) => {
         telefono,
         contacto_emergencia,
         direccion,
-        estado,
+        estado, 
         id_obra_social: idObraSocial
       },
       { where: { id_paciente: id } }
@@ -186,6 +210,30 @@ const toggleEstado = async (req, res) => {
   try {
     const paciente = await Paciente.findByPk(req.params.id);
     if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado' });
+
+    if (paciente.estado === 'Activo') {
+      const { Internacion, Admision } = require('../models'); 
+      
+      // Verificar si está en una cama con internación activa
+      const internado = await Internacion.findOne({ 
+        where: { id_paciente: paciente.id_paciente, estado: 'Activa' } 
+      });
+      if (internado) {
+        return res.status(400).json({ 
+          error: 'No se puede desactivar el paciente porque se encuentra actualmente internado.' 
+        });
+      }
+
+      // Verificar si tiene una admisión activa 
+      const admitido = await Admision.findOne({ 
+        where: { id_paciente: paciente.id_paciente, estado: 'activo' } 
+      });
+      if (admitido) {
+        return res.status(400).json({ 
+          error: 'No se puede desactivar el paciente porque tiene una admisión en curso.' 
+        });
+      }
+    }
 
     paciente.estado = paciente.estado === 'Activo' ? 'Inactivo' : 'Activo';
     await paciente.save();

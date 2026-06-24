@@ -171,10 +171,21 @@ exports.actualizarAdmision = async (req, res) => {
 exports.darDeBajaAdmision = async (req, res) => {
   try {
     const id_admision = req.params.id;
+    const { Internacion } = require('../models'); // Traemos Internacion para validar
 
     const admision = await Admision.findByPk(id_admision);
     if (!admision) {
       return res.status(404).json({ error: 'Admision no encontrada.' });
+    }
+
+    const yaInternado = await Internacion.findOne({
+      where: { id_paciente: admision.id_paciente, estado: 'Activa' }
+    });
+
+    if (yaInternado) {
+      return res.status(400).json({ 
+        error: 'No se puede cancelar la admisión porque el paciente ya fue asignado a una habitación y se encuentra internado.' 
+      });
     }
 
     await admision.update({ estado: 'cancelado' });

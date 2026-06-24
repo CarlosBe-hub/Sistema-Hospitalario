@@ -1,7 +1,22 @@
 extends ../layout
 
 block content
+  .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1080;")
+    #toastSuccess.toast.align-items-center.text-white.bg-success.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-check-circle-fill.me-2
+          span#toastMensajeTexto Operación realizada con éxito.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
+
   .container.mt-5
+    if errorMsg
+      .alert.alert-danger.alert-dismissible.fade.show.mb-4(role="alert", style="border-left: 5px solid darkred;")
+        i.bi.bi-exclamation-octagon-fill.me-2
+        strong ¡Operación Denegada! 
+        | #{errorMsg}
+        button.btn-close(type="button", data-bs-dismiss="alert", aria-label="Close")
+
     h1.text-center Pacientes Activos
 
     // Contadores
@@ -51,10 +66,10 @@ block content
             td= paciente.telefono
             td= paciente.obraSocial ? paciente.obraSocial.nombre : 'No Posee'
             td
-              button.btn(
-                class=paciente.estado === 'Activo' ? 'btn-success' : 'btn-secondary',
-                onclick=`toggleEstado(${paciente.id_paciente}, this)`
-              )= paciente.estado
+              if paciente.estado === 'Activo'
+                span.badge.bg-success.px-2.py-1 Activo
+              else
+                span.badge.bg-secondary.px-2.py-1 Inactivo
             td
               a.btn.btn-sm.btn-outline-primary(href=`/pacientes/${paciente.id_paciente}/editar`) Editar
 
@@ -136,15 +151,6 @@ block content
               button.btn.btn-secondary(type='button', data-bs-dismiss='modal') Cancelar
               button.btn.btn-primary(type='submit') Guardar
 
-    // Toast de estado
-    .position-fixed.bottom-0.end-0.p-3(style='z-index: 11')
-      .toast#estadoToast(role='alert', aria-live='assertive', aria-atomic='true')
-        .toast-header
-          strong.me-auto Estado del Paciente
-          small.text-muted Ahora
-          button.btn-close(type='button', data-bs-dismiss='toast')
-        .toast-body#toastBody
-
   script(src='https://code.jquery.com/jquery-3.6.0.min.js')
   script(src='https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js')
   script(src='https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js')
@@ -160,7 +166,8 @@ block content
 
       const form = document.getElementById('formPaciente');
       const maxDate = new Date().toISOString().split('T')[0];
-      form.querySelector('input[name="fecha_nacimiento"]').max = maxDate;
+      const inputFecha = form.querySelector('input[name="fecha_nacimiento"]');
+      if (inputFecha) inputFecha.max = maxDate;
 
       form.addEventListener('submit', function (e) {
         const inputs = form.querySelectorAll('input, select');
@@ -184,45 +191,39 @@ block content
       });
 
       const params = new URLSearchParams(window.location.search);
-      const abrir = params.get('abrirModal') === '1' || params.get('error') === 'dni';
+      
+      const abrir = params.get('nuevo') === '1' || params.get('error') === 'dni';
       if (abrir) {
-        const modal = new bootstrap.Modal(document.getElementById('nuevoPacienteModal'));
-        modal.show();
-        window.history.replaceState({}, document.title, "/pacientes");
+        const modalElement = document.getElementById('nuevoPacienteModal');
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement);
+          modal.show();
+        }
+      }
+
+      if (params.get('success') === '1' || params.get('success_edit') === '1') {
+        const toastElement = document.getElementById('toastSuccess');
+        const toastMensajeTexto = document.getElementById('toastMensajeTexto');
+        
+        if (params.get('success_edit') === '1') {
+          toastMensajeTexto.textContent = 'Los datos del paciente fueron actualizados con éxito.';
+        } else {
+          toastMensajeTexto.textContent = 'El paciente ha sido registrado en el sistema.';
+        }
+
+        if (toastElement) {
+          const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+          toast.show();
+        }
+      }
+
+      // Limpiar la URL de flags molestos para que no se re ejecuten al dar F5
+      if (window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
 
       actualizarContadores();
     });
-
-    function toggleEstado(id, button) {
-      fetch(`/pacientes/${id}/toggle-estado`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-          button.textContent = data.estado;
-          if (data.estado === 'Activo') {
-            button.classList.remove('btn-secondary');
-            button.classList.add('btn-success');
-            mostrarToast('Paciente activado correctamente.', 'bg-success', 'text-white');
-          } else {
-            button.classList.remove('btn-success');
-            button.classList.add('btn-secondary');
-            mostrarToast('Paciente desactivado correctamente.', 'bg-secondary', 'text-white');
-          }
-        })
-        .catch(error => {
-          console.error('Error al cambiar el estado:', error);
-          mostrarToast('Error al cambiar el estado.', 'bg-warning', 'text-dark');
-        });
-    }
-
-    function mostrarToast(mensaje, fondo, texto) {
-      const toast = document.getElementById('estadoToast');
-      const body = document.getElementById('toastBody');
-      toast.className = `toast ${fondo} ${texto}`;
-      body.textContent = mensaje;
-      const bsToast = new bootstrap.Toast(toast);
-      bsToast.show();
-    }
 
     function actualizarContadores() {
       const pacientes = !{JSON.stringify(pacientes)};

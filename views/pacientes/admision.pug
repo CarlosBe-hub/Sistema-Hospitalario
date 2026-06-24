@@ -1,271 +1,179 @@
 extends ../layout
+
 block content
-  h1 Admisiones
+  .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1080;")
+    #toastSuccess.toast.align-items-center.text-white.bg-success.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-check-circle-fill.me-2
+          span#toastMensajeTexto Operación realizada con éxito.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
 
-  button.btn.btn-primary.mb-3(data-bs-toggle="modal", data-bs-target="#modalAdmision") + Nueva Admisión
+    #toastError.toast.align-items-center.text-white.bg-danger.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-exclamation-octagon-fill.me-2
+          span#toastErrorTexto Ocurrió un error inesperado.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
 
-  table#tablaAdmisiones.table.table-hover
-    thead
-      tr
-        th ID
-        th Paciente
-        th Fecha
-        th Motivo de Admisión
-        th Estado
-        th Acciones
-    tbody
-      each admision in admisiones
+  .container.mt-4
+    h1 Admisiones
+
+    button.btn.btn-primary.mb-3(data-bs-toggle="modal", data-bs-target="#modalAdmision") + Nueva Admisión
+
+    table#tablaAdmisiones.table.table-hover
+      thead
         tr
-          td= admision.id_admision
-          td= admision.paciente.nombre + ' ' + admision.paciente.apellido
-          td= admision.fecha_admision
-          td= admision.motivo_admision ? admision.motivo_admision.descripcion : 'Sin motivo'
-          td= admision.estado
-          td
-            button.btn.btn-sm.btn-warning(
-              type="button",
-              data-bs-toggle="modal",
-              data-bs-target="#modalEditarAdmision",
-              data-id=admision.id_admision,
-              data-paciente=admision.id_paciente,
-              data-fecha=admision.fecha_admision,
-              data-motivo=admision.id_motivo,
-              data-estado=admision.estado
-            ) Editar
-            if admision.estado == 'activo'
-              button.btn.btn-sm.btn-danger(
+          th ID
+          th Paciente
+          th Fecha
+          th Motivo de Admisión
+          th Estado
+          th Acciones
+      tbody
+        each admision in admisiones
+          tr
+            td= admision.id_admision
+            td= admision.paciente.nombre + ' ' + admision.paciente.apellido
+            td= admision.fecha_admision
+            td= admision.motivo_admision ? admision.motivo_admision.descripcion : 'Sin motivo'
+            td
+              if admision.estado === 'activo'
+                span.badge.bg-success activo
+              else
+                span.badge.bg-secondary cancelado
+            td
+              button.btn.btn-sm.btn-warning.me-2(
                 type="button",
+                data-bs-toggle="modal",
+                data-bs-target="#modalEditarAdmision",
                 data-id=admision.id_admision,
-                onclick="cancelarAdmision(this)"
-              ) Cancelar
+                data-paciente=admision.id_paciente,
+                data-fecha=admision.fecha_admision,
+                data-motivo=admision.id_motivo,
+                data-estado=admision.estado
+              ) Editar
+              if admision.estado == 'activo'
+                button.btn.btn-sm.btn-danger(
+                  type="button",
+                  onclick=`cancelarAdmisionDirecto(${admision.id_admision})`
+                ) Cancelar
 
-  // Modal nueva admisión
-  .modal.fade#modalAdmision(tabindex="-1", aria-hidden="true")
+  // Modal Nueva Admisión
+  .modal.fade#modalAdmision(tabindex="-1", aria-labelledby="modalAdmisionLabel", aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
-          h5.modal-title Nueva Admisión
-          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
+          h5.modal-title#modalAdmisionLabel Registrar Nueva Admisión
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Close")
         form#formNuevaAdmision
           .modal-body
-            div#mensajeError.alert.alert-danger(style="display:none")
-            div#mensajeBusqueda
-
             .mb-3
-              label.form-label(for="buscar_dni") Buscar por DNI
-              .input-group
-                input.form-control(type="text", id="buscar_dni", name="buscar_dni", placeholder="Ingrese DNI", value=dni || '')
-                button.btn.btn-outline-secondary(type="button", id="btnBuscarDNI") Buscar
-              div.text-danger.small#err_dni
-
+              label.form-label Paciente
+              select.form-select#id_paciente(name="id_paciente", required)
+                option(value="") Seleccione un paciente...
+                each paciente in pacientes
+                  option(value=paciente.id_paciente)= paciente.nombre + ' ' + paciente.apellido + ' (DNI: ' + paciente.dni + ')'
+              small.text-danger#err_paciente
             .mb-3
-              label.form-label(for="id_paciente") Paciente
-              select.form-select(name="id_paciente", id="id_paciente", disabled)
-                option(value="") -- Selecciona un paciente --
-              div.text-danger.small#err_paciente
-
+              label.form-label Fecha de Admisión
+              input.form-control#fecha_admision(type="date", name="fecha_admision", required)
+              small.text-danger#err_fecha
             .mb-3
-              label.form-label(for="fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="fecha_admision", step="60")
-              div.text-danger.small#err_fecha
-
-            .mb-3
-              label.form-label(for="id_motivo") Motivo de Admisión
-              select.form-select(name="id_motivo", id="id_motivo")
-                option(value="") -- Selecciona un motivo --
+              label.form-label Motivo
+              select.form-select#id_motivo(name="id_motivo", required)
+                option(value="") Seleccione un motivo...
                 each motivo in motivos
                   option(value=motivo.id_motivo)= motivo.descripcion
-              div.text-danger.small#err_tipo
-
+              small.text-danger#err_motivo
           .modal-footer
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
-            button.btn.btn-primary(type="submit", id="btnGuardarAdmision", disabled) Guardar
+            button.btn.btn-primary(type="submit") Guardar Admisión
 
-  // Modal editar admisión
-  .modal.fade#modalEditarAdmision(tabindex="-1", aria-hidden="true")
+  // Modal Editar Admisión
+  .modal.fade#modalEditarAdmision(tabindex="-1", aria-labelledby="modalEditarAdmisionLabel", aria-hidden="true")
     .modal-dialog
       .modal-content
         .modal-header
-          h5.modal-title Editar Admisión
-          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Cerrar")
-        form#formEditarAdmision(method="POST", action="/admision/0")
-          input(type="hidden", name="_method", value="PUT")
-          input(type="hidden", name="id_admision", id="edit_id_admision")
-          input(type="hidden", name="id_paciente", id="edit_id_paciente")
-
+          h5.modal-title#modalEditarAdmisionLabel Editar Admisión
+          button.btn-close(type="button", data-bs-dismiss="modal", aria-label="Close")
+        form#formEditarAdmision
+          input(type="hidden")#edit_id_admision
+          input(type="hidden")#edit_id_paciente
           .modal-body
             .mb-3
-              label.form-label(for="edit_fecha_admision") Fecha de Admisión
-              input.form-control(type="datetime-local", name="fecha_admision", id="edit_fecha_admision", step="60")
-              div.text-danger.small#err_edit_fecha
-
+              label.form-label Fecha de Admisión
+              input.form-control#edit_fecha_admision(type="date", name="fecha_admision", required)
+              small.text-danger#err_edit_fecha
             .mb-3
-              label.form-label(for="edit_id_motivo") Motivo de Admisión
-              select.form-select(name="id_motivo", id="edit_id_motivo")
+              label.form-label Motivo
+              select.form-select#edit_id_motivo(name="id_motivo", required)
+                option(value="") Seleccione un motivo...
                 each motivo in motivos
                   option(value=motivo.id_motivo)= motivo.descripcion
-              div.text-danger.small#err_edit_tipo
-
+              small.text-danger#err_edit_tipo
             .mb-3
-              label.form-label(for="edit_estado") Estado
-              select.form-select(name="estado", id="edit_estado")
-                option(value="activo") Activo
-                option(value="cancelado") Cancelado
-              div.text-danger.small#err_edit_estado
-
+              label.form-label Estado
+              select.form-select#edit_estado(name="estado", required)
+                option(value="activo") activo
+                option(value="cancelado") cancelado
+              small.text-danger#err_edit_estado
           .modal-footer
             button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
-            button.btn.btn-primary(type="submit") Guardar cambios
+            button.btn.btn-primary(type="submit") Actualizar Cambios
 
-block scripts
-  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
+  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
 
   script.
     $(document).ready(function () {
+      // 1. Inicializar DataTables con idioma español
       $('#tablaAdmisiones').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
-        responsive: true
+        order: [[0, "desc"]]
       });
 
-      function formatearFecha(fechaStr) {
+      function formatearFechaArgentina(fechaStr) {
         if (!fechaStr) return '';
         const fecha = new Date(fechaStr);
-        if (isNaN(fecha)) return fechaStr;
-        const dia = String(fecha.getDate()).padStart(2, '0');
-        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-        const anio = fecha.getFullYear();
-        const horas = String(fecha.getHours()).padStart(2, '0');
-        const minutos = String(fecha.getMinutes()).padStart(2, '0');
-        return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+        if (isNaN(fecha.getTime())) return fechaStr; 
+
+        return fecha.toLocaleString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
       }
 
       $('#tablaAdmisiones tbody tr').each(function () {
-        const $celdaFecha = $(this).find('td').eq(2);
+        const $celdaFecha = $(this).find('td').eq(2); 
         const fechaTexto = $celdaFecha.text().trim();
-        const fechaFormateada = formatearFecha(fechaTexto);
-        $celdaFecha.text(fechaFormateada);
-      });
-
-      $('#btnBuscarDNI').click(function () {
-        const dni = $('#buscar_dni').val().trim();
-        const $mensajeError = $('#mensajeError');
-        const $mensajeBusqueda = $('#mensajeBusqueda');
-        const $selectPaciente = $('#id_paciente');
-
-        $mensajeError.hide().html('');
-        $mensajeBusqueda.html('');
-        $selectPaciente.empty().append('<option value="">-- Selecciona un paciente --</option>');
-        $('#btnGuardarAdmision').prop('disabled', true);
-
-        if (dni.length < 6) {
-          $('#err_dni').text('Debe ingresar un DNI válido.');
-          return;
-        } else {
-          $('#err_dni').text('');
-        }
-
-        $.ajax({
-          url: `/admision/buscar-paciente/${dni}`,
-          method: 'GET',
-          success: function (data) {
-            if (data.pacienteInactivo) {
-              $mensajeError
-                .show()
-                .html('<strong>¡Error!</strong> No se puede admitir a un paciente inactivo.');
-              $selectPaciente.prop('disabled', true);
-              $('#btnGuardarAdmision').prop('disabled', true);
-            } else if (data.admisionActiva) {
-              $mensajeError
-                .show()
-                .html('<strong>¡Error!</strong> Este paciente ya tiene una admisión activa. El paciente está actualmente internado.');
-              $selectPaciente.prop('disabled', true);
-              $('#btnGuardarAdmision').prop('disabled', true);
-            } else {
-              $mensajeError.hide().html('');
-              $mensajeBusqueda.html(`<div class="alert alert-success">Paciente encontrado: <strong>${data.nombre} ${data.apellido}</strong></div>`);
-              $selectPaciente
-                .append(`<option value="${data.id_paciente}" selected>${data.nombre} ${data.apellido}</option>`)
-                .prop('disabled', false);
-              $('#btnGuardarAdmision').prop('disabled', false);
-            }
-          },
-          error: function (xhr) {
-            if (xhr.status === 404) {
-              $mensajeBusqueda.html(`
-                <div class="alert alert-warning d-flex justify-content-between align-items-center">
-                  <span>Paciente no encontrado.</span>
-                  <button id="btnRedirigirPacientes" class="btn btn-sm btn-outline-primary ms-3">
-                    Crear nuevo paciente
-                  </button>
-                </div>
-              `);
-            } else {
-              $mensajeBusqueda.html('<div class="alert alert-danger">Error al buscar el paciente.</div>');
-            }
-          }
-        });
-      });
-
-      $(document).on('click', '#btnRedirigirPacientes', function() {
-        window.location.href = '/pacientes?abrirModal=1';
-      });
-
-      $('#buscar_dni').keypress(function (e) {
-        if (e.which == 13) {
-          $('#btnBuscarDNI').click();
+        if (fechaTexto) {
+          const fechaFormateada = formatearFechaArgentina(fechaTexto);
+          $celdaFecha.text(fechaFormateada);
         }
       });
 
-      window.cancelarAdmision = function (button) {
-        const idAdmision = $(button).data('id');
-        if (confirm("¿Estás seguro de que deseas cancelar esta admisión?")) {
-          $.ajax({
-            url: `/admision/${idAdmision}/cancelar`,
-            method: 'PUT',
-            success: function () {
-              alert('Admision cancelada correctamente');
-              location.reload();
-            },
-            error: function () {
-              alert('Error al cancelar la admisión');
-            }
-          });
-        }
-      }
-
+      // Rellenar campos en el modal de edición al abrirlo
       $('#modalEditarAdmision').on('show.bs.modal', function (event) {
         const button = $(event.relatedTarget);
-        const idAdmision = button.data('id');
-        let fecha = button.data('fecha');
-        const motivo = button.data('motivo');
-        const estado = button.data('estado');
-        const pacienteId = button.data('paciente');
-
-        if (fecha) {
-          const dt = new Date(fecha);
-          const pad = (n) => n.toString().padStart(2, '0');
-          const formatted = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-          fecha = formatted;
-        }
-
-        const modal = $(this);
-        modal.find('#edit_id_admision').val(idAdmision);
-        modal.find('#edit_fecha_admision').val(fecha);
-        modal.find('#edit_id_motivo').val(motivo);
-        modal.find('#edit_estado').val(estado);
-        modal.find('#edit_id_paciente').val(pacienteId);
-        modal.find('form').attr('action', `/admision/${idAdmision}?_method=PUT`);
+        $('#edit_id_admision').val(button.data('id'));
+        $('#edit_id_paciente').val(button.data('paciente'));
+        $('#edit_fecha_admision').val(button.data('fecha'));
+        $('#edit_id_motivo').val(button.data('motivo'));
+        $('#edit_estado').val(button.data('estado'));
       });
 
+      // Enviar formulario (POST)
       $('#formNuevaAdmision').submit(function (e) {
         e.preventDefault();
-
-        $('#err_paciente, #err_fecha, #err_tipo').text('');
-        $('#mensajeError').hide().html('');
+        $('#err_paciente, #err_fecha, #err_motivo').text('');
 
         const data = {
           id_paciente: $('#id_paciente').val(),
@@ -273,39 +181,36 @@ block scripts
           id_motivo: $('#id_motivo').val()
         };
 
-        let hayError = false;
-        if (!data.id_paciente) { $('#err_paciente').text('Debe seleccionar un paciente.'); hayError = true; }
-        if (!data.fecha_admision) { $('#err_fecha').text('Debe ingresar la fecha de admisión.'); hayError = true; }
-        if (!data.id_motivo) { $('#err_tipo').text('Debe seleccionar un motivo.'); hayError = true; }
-        if (hayError) return;
+        let flagError = false;
+        if (!data.id_paciente) { $('#err_paciente').text('Debe seleccionar un paciente.'); flagError = true; }
+        if (!data.fecha_admision) { $('#err_fecha').text('Debe ingresar una fecha.'); flagError = true; }
+        if (!data.id_motivo) { $('#err_motivo').text('Debe seleccionar el motivo.'); flagError = true; }
+        if (flagError) return;
 
         $.ajax({
-          url: '/admision/guardar',
+          url: '/admision/guardar', 
           method: 'POST',
           contentType: 'application/json',
           data: JSON.stringify(data),
-          success: function () {
+          success: function (res) {
             $('#modalAdmision').modal('hide');
-            location.reload();
+            dispararToast('Nueva admisión registrada con éxito.');
+            setTimeout(() => { location.reload(); }, 1500);
           },
-          error: function (xhr) {
-            if (xhr.status === 400 && xhr.responseJSON) {
-              const err = xhr.responseJSON;
-              if (err.admisionActiva) {
-                $('#mensajeError').show();
-              } else if (err.error) {
-                alert('Error: ' + err.error);
-              }
+          error: function (err) {
+            $('#modalAdmision').modal('hide');
+            if (err.responseJSON && err.responseJSON.error) {
+              mostrarErrorAlerta(err.responseJSON.error);
             } else {
-              alert('Error al guardar la admisión.');
+              mostrarErrorAlerta('Error interno al registrar la admisión.');
             }
           }
         });
       });
 
+      // Enviar formulario editado 
       $('#formEditarAdmision').submit(function (e) {
         e.preventDefault();
-
         $('#err_edit_fecha, #err_edit_tipo, #err_edit_estado').text('');
 
         const idAdmision = $('#edit_id_admision').val();
@@ -327,14 +232,52 @@ block scripts
           method: 'PUT',
           contentType: 'application/json',
           data: JSON.stringify(data),
-          success: function () {
+          success: function (res) {
             $('#modalEditarAdmision').modal('hide');
-            location.reload();
+            dispararToast('Admisión actualizada correctamente.');
+            setTimeout(() => { location.reload(); }, 1500);
           },
-          error: function () {
-            alert('Error al actualizar la admisión.');
+          error: function (err) {
+            $('#modalEditarAdmision').modal('hide');
+            if (err.responseJSON && err.responseJSON.error) {
+              mostrarErrorAlerta(err.responseJSON.error);
+            } else {
+              mostrarErrorAlerta('Error al intentar modificar la admisión.');
+            }
           }
         });
       });
-
     });
+
+    // Función directa para el botón "Cancelar"
+    function cancelarAdmisionDirecto(id) {
+      $.ajax({
+        url: `/admision/${id}/cancelar`,
+        method: 'PUT', 
+        success: function(res) {
+          dispararToast('La admisión fue cancelada correctamente.');
+          setTimeout(() => { location.reload(); }, 1500);
+        },
+        error: function(err) {
+          if (err.responseJSON && err.responseJSON.error) {
+            mostrarErrorAlerta(err.responseJSON.error);
+          } else {
+            mostrarErrorAlerta('No se pudo procesar la baja de la admisión.');
+          }
+        }
+      });
+    }
+
+    function dispararToast(mensaje) {
+      $('#toastMensajeTexto').text(mensaje);
+      const toastElement = document.getElementById('toastSuccess');
+      const bsToast = new bootstrap.Toast(toastElement, { delay: 4000 });
+      bsToast.show();
+    }
+
+    function mostrarErrorAlerta(mensaje) {
+      $('#toastErrorTexto').text(mensaje);
+      const errorElement = document.getElementById('toastError');
+      const bsToast = new bootstrap.Toast(errorElement, { delay: 4500 });
+      bsToast.show();
+    }
