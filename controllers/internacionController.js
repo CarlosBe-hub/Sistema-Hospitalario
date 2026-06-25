@@ -209,4 +209,57 @@ module.exports = {
       error,
     });
   },
+  async anularInternacion(req, res) {
+    const { sequelize } = require('../models'); 
+    const t = await sequelize.transaction();
+    try {
+      const { id } = req.params;
+
+      // Buscar la internación en curso
+      const internacion = await Internacion.findByPk(id, { transaction: t });
+
+      if (!internacion) {
+        await t.rollback();
+        return res.status(404).json({ error: 'La internación especificada no existe.' });
+      }
+
+      if (internacion.estado !== 'Activa') {
+        await t.rollback();
+        return res.status(400).json({ error: 'Operación denegada: Solo se pueden anular internaciones que estén en estado Activa.' });
+      }
+
+      // Cambiar estado de la Internación a 'Anulada'
+      await internacion.update({ estado: 'Anulada' }, { transaction: t });
+
+      // Buscar la Admisión activa asociada al paciente y cancelarla
+      const admision = await Admisiones.findOne({
+        where: { 
+          id_paciente: internacion.id_paciente,
+          estado: { [Op.in]: ['activo', 'Activo'] }
+        },
+        transaction: t
+      });
+
+      if (admision) {
+        await admision.update({ estado: 'cancelado' }, { transaction: t });
+      }
+
+      // Liberar la cama asociada poniéndola en 'Disponible'
+      if (internacion.id_cama) {
+        const cama = await Cama.findByPk(internacion.id_cama, { transaction: t });
+        if (cama) {
+          await cama.update({ estado: 'Disponible' }, { transaction: t });
+        }
+      }
+
+      // Si se cumplen las 3 operaciones se confirman los cambios 
+      await t.commit();
+      return res.status(200).json({ message: 'La internación fue anulada y la cama ha sido liberada exitosamente.' });
+    } catch (error) {
+      await t.rollback();
+      console.error('Error al anular la internación:', error);
+      return res.status(500).json({ error: 'Error interno del servidor al procesar la anulación hospitalaria.' });
+    }
+  },
 };
+

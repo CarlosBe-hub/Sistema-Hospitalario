@@ -6,20 +6,37 @@ block content
       .d-flex
         .toast-body
           i.bi.bi-check-circle-fill.me-2
-          | La internación hospitalaria del paciente fue registrada con éxito.
+          span#toastSuccessTexto La internación hospitalaria del paciente fue registrada con éxito.
+        button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
+
+    // Ventanita flotante roja para rechazos lógicos
+    #toastError.toast.align-items-center.text-white.bg-danger.border-0(role="alert", aria-live="assertive", aria-atomic="true")
+      .d-flex
+        .toast-body
+          i.bi.bi-exclamation-octagon-fill.me-2
+          span#toastErrorTexto Ocurrió un error inesperado.
         button.btn.btn-close.btn-close-white.me-2.m-auto(type="button", data-bs-dismiss="toast", aria-label="Close")
 
   .container.mt-4
-    // Mensaje de para avisar de dni 
+    // Mensaje para avisar de DNI duplicado en pacientes NN
     #alertaError.alert.alert-danger.alert-dismissible.fade.show.d-none(role="alert")
       i.bi.bi-exclamation-triangle-fill.me-2
       strong ¡Error!
       |  El DNI ingresado ya pertenece a otro paciente registrado en el sistema.
       button.btn-close(type="button" data-bs-dismiss="alert" aria-label="Close")
 
-    h2.mb-4 Listado de Internaciones
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h2.mb-0 Listado de Internaciones
+      
+      .d-flex.align-items-center
+        label.fw-bold.me-2.text-nowrap(for="filtroEstado") Filtrar vista:
+        select#filtroEstado.form-select.border-primary.fw-bold(style="width: auto; cursor: pointer;")
+          option(value="Activa" selected) 🏥 Solo Internados (Activas)
+          option(value="") 📁 Historial Completo (Todas)
+          option(value="Alta Firmada") ✔️ Solo Altas Firmadas
+          option(value="Anulada") ✖️ Solo Anuladas
 
-    table#tablaInternaciones.table.table-bordered
+    table#tablaInternaciones.table.table-bordered.table-hover
       thead
         tr
           th Paciente
@@ -41,14 +58,14 @@ block content
               if internacion.Paciente && internacion.Paciente.dni.startsWith('NN-')
                 span.badge.bg-danger.me-2 ⚠️ Emergencia NN
               else
-                | #{internacion.Paciente.nombre} #{internacion.Paciente.apellido}
+                | #{internacion.Paciente ? internacion.Paciente.nombre + ' ' + internacion.Paciente.apellido : 'N/D'}
                 
-            td= internacion.Paciente.dni
-            td= internacion.Paciente.genero
+            td= internacion.Paciente ? internacion.Paciente.dni : 'N/D'
+            td= internacion.Paciente ? internacion.Paciente.genero : 'N/D'
 
             - var fecha = new Date(internacion.fecha_ingreso);
-            - var fechaStr = fecha.toISOString().split('T')[0];
-            - var horaStr = fecha.toTimeString().split(' ')[0].slice(0,5);
+            - var fechaStr = !isNaN(fecha) ? fecha.toLocaleDateString('es-AR') : '-';
+            - var horaStr = !isNaN(fecha) ? fecha.toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
             td= fechaStr + ' ' + horaStr
 
             - var motivoDesc = internacion.MotivoInternacion ? internacion.MotivoInternacion.descripcion : '-'
@@ -65,39 +82,52 @@ block content
 
             td
               if internacion.Cama && internacion.Cama.estado === 'Ocupada'
-                span.text-danger 🛏️ Ocupada
+                span.text-danger.fw-bold 🛏️ Ocupada
               else if internacion.Cama && (internacion.Cama.estado === 'Higienizada' || internacion.Cama.estado === 'Disponible')
-                span.text-warning 🛏️ Higienizada
+                span.text-warning.fw-bold 🛏️ Higienizada / Disponible
               else if internacion.Cama && internacion.Cama.estado === 'para_limpieza'
-                span.text-info 🧽 Para Limpieza
+                span.text-info.fw-bold 🧽 Para Limpieza
               else if internacion.Cama && internacion.Cama.estado === 'Libre'
-                span.text-success 🛏️ Libre
+                span.text-success.fw-bold 🛏️ Libre
               else
                 span.text-muted 🛏️ N/D
 
             td
               if internacion.estado === 'Finalizada'
                 span.badge.bg-success Alta Firmada
+              else if internacion.estado === 'Anulada'
+                span.badge.bg-secondary Anulada
               else
                 span.badge.bg-primary Activa
 
             - var generoEnCama = internacion.Paciente ? internacion.Paciente.genero : 'N/D'
             td= generoEnCama
 
-            td
+            td.text-center
               if internacion.Paciente && internacion.Paciente.dni.startsWith('NN-')
-                button.btn.btn-sm.btn-warning.btn-identificar(
+                button.btn.btn-sm.btn-warning.btn-identificar.me-1(
                   type="button"
                   data-bs-toggle="modal"
                   data-bs-target="#modalIdentificar"
                   data-id=internacion.Paciente.id_paciente
                   data-dni=internacion.Paciente.dni
+                  title="Identificar Paciente NN"
                 )
-                  i.bi.bi-person-check-fill.me-1
-                  | Identificar
-              else
+                  i.bi.bi-person-check-fill
+              
+              // Botón de Anulación 
+              if internacion.estado === 'Activa'
+                button.btn.btn-sm.btn-outline-danger(
+                  type="button"
+                  onclick=`anularInternacionDirecto(${internacion.id_internacion})`
+                  title="Anular internación y liberar cama automáticamente"
+                )
+                  i.bi.bi-x-circle-fill.me-1
+                  | Anular
+              else if !internacion.Paciente || !internacion.Paciente.dni.startsWith('NN-')
                 span.text-muted -
 
+    // Modal Identificar Paciente NN
     #modalIdentificar.modal.fade(tabindex="-1" aria-labelledby="modalIdentificarLabel" aria-hidden="true")
       .modal-dialog.modal-md
         .modal-content
@@ -142,7 +172,7 @@ block content
                         option(value=os.id_obra_social)= os.nombre
               .mb-3
                 label.form-label.fw-bold Teléfono
-                input.form-control(type="text" name="telefono" pattern="[0-9]{7,15}" title="Ingrese un número de teléfono válido (solo números entre 7 y 15 dígitos)")
+                input.form-control(type="text" name="telefono" pattern="[0-9]{7,15}" title="Ingrese un número de teléfono válido")
                 
               .modal-footer.pe-0.pb-0
                 button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
@@ -151,42 +181,44 @@ block content
     hr
     h5.mt-4 Leyenda de Camas:
     p
-      span.text-success 🛏️ Libre
-      |     
-      span.text-info 🧽 Para Limpieza
-      |     
-      span.text-danger 🛏️ Ocupada
+      span.text-success.fw-bold 🛏️ Libre
+      |  |  
+      span.text-info.fw-bold 🧽 Para Limpieza
+      |  |  
+      span.text-danger.fw-bold 🛏️ Ocupada
 
   // CDN DataTables
   script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
   link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
 
-  // Inicialización del DataTable y script del modal
   script.
     $(document).ready(function() {
-      // Verificar errores de duplicación por URL
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('error') === 'dni_duplicado') {
-        $('#alertaError').alert().removeClass('d-none');
+        $('#alertaError').removeClass('d-none');
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
       if (urlParams.get('success') === '1') {
-        const toastElement = document.getElementById('toastSuccess');
-        if (toastElement) {
-          const toast = new bootstrap.Toast(toastElement, { delay: 4500 });
-          toast.show();
-        }
+        dispararToastSuccess('La internación hospitalaria fue registrada con éxito.');
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      $('#tablaInternaciones').DataTable({
+      const tabla = $('#tablaInternaciones').DataTable({
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
-        pageLength: 10
+        pageLength: 5,
+        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "Todos"]],
+        order: [[3, "desc"]]
       });
+
+      tabla.column(9).search('Activa').draw();
+
+      $('#filtroEstado').on('change', function() {
+        tabla.column(9).search(this.value).draw();
+      }); 
 
       $('#tablaInternaciones tbody').on('click', '.btn-identificar', function() {
         const idPaciente = $(this).attr('data-id');
@@ -196,3 +228,33 @@ block content
         $('#formIdentificar').attr('action', '/pacientes/identificar/' + idPaciente);
       });
     });
+
+    function anularInternacionDirecto(idInternacion) {
+      $.ajax({
+        url: `/internacion/${idInternacion}/anular`,
+        method: 'PUT',
+        success: function(res) {
+          dispararToastSuccess(res.message || 'Internación anulada con éxito.');
+          setTimeout(() => { location.reload(); }, 1500);
+        },
+        error: function(err) {
+          const msg = err.responseJSON?.error || 'No se pudo procesar la anulación de la internación.';
+          mostrarToastError(msg);
+        }
+      });
+    }
+
+    // Funciones auxiliares para Toasts flotantes
+    function dispararToastSuccess(mensaje) {
+      $('#toastSuccessTexto').text(mensaje);
+      const toastElement = document.getElementById('toastSuccess');
+      const bsToast = new bootstrap.Toast(toastElement, { delay: 4000 });
+      bsToast.show();
+    }
+
+    function mostrarToastError(mensaje) {
+      $('#toastErrorTexto').text(mensaje);
+      const errorElement = document.getElementById('toastError');
+      const bsToast = new bootstrap.Toast(errorElement, { delay: 4500 });
+      bsToast.show();
+    }

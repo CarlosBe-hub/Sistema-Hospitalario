@@ -18,4 +18,7 @@ router.post('/crear', InternacionController.crearInternacion);
 // Listado de internaciones
 router.get('/listado', InternacionController.listadoInternaciones);
 
+// Anular internación vía AJAX
+router.put('/:id/anular', InternacionController.anularInternacion);
+
 module.exports = router;

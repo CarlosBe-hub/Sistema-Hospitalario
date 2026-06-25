@@ -21,7 +21,7 @@ Internacion.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      isIn: [['Activa', 'Finalizada', 'Cancelada']]
+      isIn: [['Activa', 'Finalizada', 'Anulada']]
     }
   },
   id_habitacion: DataTypes.INTEGER,
