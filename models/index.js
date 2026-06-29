@@ -21,7 +21,9 @@ const MotivoAdmision = require('./MotivoAdmisionModel');
 const ObraSocial = require('./ObraSocialModel');
 const Paciente = require('./PacienteModel');
 const SignosVitales = require('./SignosVitalesModel');
-const Tratamiento = require('./TratamientoModel'); 
+const Tratamiento = require('./TratamientoModel');
+const Rol = require('./Rol');
+const Usuario = require('./Usuario'); 
 
 // ─────────────────────────────────────────────
 // PACIENTE RELACIONES
@@ -132,6 +134,12 @@ Guardia.hasMany(Admision, { foreignKey: 'id_turno' });
 Admision.belongsTo(Guardia, { foreignKey: 'id_turno', as: 'guardia' });
 
 // ─────────────────────────────────────────────
+// USUARIO-LOGIN
+
+Rol.hasMany(Usuario, { foreignKey: 'id_rol', as: 'usuarios' });
+Usuario.belongsTo(Rol, { foreignKey: 'id_rol', as: 'rol' });
+
+// ─────────────────────────────────────────────
 // EXPORTAR
 module.exports = {
   sequelize,
@@ -155,5 +163,7 @@ module.exports = {
   ObraSocial,
   Paciente,
   SignosVitales,
-  Tratamiento 
+  Tratamiento,
+  Rol,
+  Usuario 
 };
