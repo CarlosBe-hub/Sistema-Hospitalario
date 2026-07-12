@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const InternacionController = require('../controllers/internacionController');
 
-// Menú de internación
+// Menu de internación
 router.get('/', (req, res) => {
   res.render('internacionMenu');
 });
@@ -20,5 +20,8 @@ router.get('/listado', InternacionController.listadoInternaciones);
 
 // Anular internación vía AJAX
 router.put('/:id/anular', InternacionController.anularInternacion);
+
+// Trasladar paciente de habitación y cama vía AJAX
+router.put('/:id/trasladar', InternacionController.trasladarPaciente);
 
 module.exports = router;

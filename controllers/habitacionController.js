@@ -45,7 +45,25 @@ const higienizarCama = async (req, res, next) => {
   }
 };
 
+//  Obtener camas de una habitación (para el Modal AJAX)
+const obtenerCamasPorHabitacion = async (req, res, next) => {
+  try {
+    const { idHabitacion } = req.params;
+    
+    const camas = await Cama.findAll({
+      where: { id_habitacion: idHabitacion },
+      order: [['numero', 'ASC']] 
+    });
+
+    return res.json(camas);
+  } catch (error) {
+    console.error("Error al obtener camas por habitación:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
 module.exports = {
   getMapaHabitaciones,
-  higienizarCama
+  higienizarCama,
+  obtenerCamasPorHabitacion 
 };

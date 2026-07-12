@@ -46,26 +46,26 @@ module.exports = {
           {
             model: Admisiones,
             where: { estado: "activo" },
-            required: true, 
+            required: true,
           },
         ],
       });
 
       if (paciente) {
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           paciente: {
             id_paciente: paciente.id_paciente,
             nombre: paciente.nombre,
             apellido: paciente.apellido,
             dni: paciente.dni,
             genero: paciente.genero
-          } 
+          }
         });
       } else {
-        return res.json({ 
-          success: false, 
-          message: 'No se encontró un paciente con ese DNI o no posee una admisión activa.' 
+        return res.json({
+          success: false,
+          message: 'No se encontró un paciente con ese DNI o no posee una admisión activa.'
         });
       }
     } catch (error) {
@@ -79,16 +79,16 @@ module.exports = {
       const { id_paciente, fecha_ingreso, id_habitacion, id_motivo, id_cama } = req.body;
 
       if (!id_paciente) {
-         return await module.exports.renderFormularioConError(res, req.body, "Debe buscar y seleccionar un paciente.");
+        return await module.exports.renderFormularioConError(res, req.body, "Debe buscar y seleccionar un paciente.");
       }
 
       const paciente = await Paciente.findByPk(id_paciente);
 
       // Verificar que el paciente tenga una admisión activa (tolerante a variaciones de caja)
       const admisionActiva = await Admisiones.findOne({
-        where: { 
-          id_paciente, 
-          estado: { [Op.in]: ["Activo", "activo"] } 
+        where: {
+          id_paciente,
+          estado: { [Op.in]: ["Activo", "activo"] }
         },
       });
 
@@ -127,7 +127,8 @@ module.exports = {
         where: { id_paciente, estado: "Activa" },
         include: [
           {
-            model: Cama, as: "Cama",
+            model: Cama,
+            as: "Cama",
             include: [{ model: Habitacion, as: "Habitacion", include: [{ model: Ala, as: "Ala" }] }],
           },
         ],
@@ -172,7 +173,7 @@ module.exports = {
           },
           {
             model: Cama, as: "Cama", attributes: ["numero", "estado"],
-            include: [{ model: Habitacion, as: "Habitacion", attributes: ["numero"], include: [{ model: Ala, as: "Ala", attributes: ["nombre"] }] }],
+            include: [{ model: Habitacion, as: "Habitacion", attributes: ["id_habitacion", "numero"], include: [{ model: Ala, as: "Ala", attributes: ["nombre"] }] }],
           },
           {
             model: MotivoInternacion, as: "MotivoInternacion", attributes: ["descripcion"],
@@ -183,9 +184,14 @@ module.exports = {
 
       const obrasSociales = await ObraSocial.findAll({ order: [['nombre', 'ASC']] });
 
+      //  Buscamos todas las habitaciones para enviarselas al modal
+      const habitaciones = await Habitacion.findAll({ order: [['numero', 'ASC']] });
+
+      // Modificamos el render para inyectar la variable 'habitaciones'
       res.render("internacion/internacionListado", { 
         internaciones,
-        obrasSociales 
+        obrasSociales,
+        habitaciones 
       });
     } catch (error) {
       console.error(error);
@@ -193,7 +199,7 @@ module.exports = {
     }
   },
 
- async renderFormularioConError(res, datosPrevios, error) {
+  async renderFormularioConError(res, datosPrevios, error) {
     console.log("INTERNACIÓN RECHAZADA. MOTIVO:", error);
     const alas = await Ala.findAll();
     const habitaciones = await Habitacion.findAll();
@@ -209,8 +215,9 @@ module.exports = {
       error,
     });
   },
+
   async anularInternacion(req, res) {
-    const { sequelize } = require('../models'); 
+    const { sequelize } = require('../models');
     const t = await sequelize.transaction();
     try {
       const { id } = req.params;
@@ -233,7 +240,7 @@ module.exports = {
 
       // Buscar la Admisión activa asociada al paciente y cancelarla
       const admision = await Admisiones.findOne({
-        where: { 
+        where: {
           id_paciente: internacion.id_paciente,
           estado: { [Op.in]: ['activo', 'Activo'] }
         },
@@ -261,5 +268,85 @@ module.exports = {
       return res.status(500).json({ error: 'Error interno del servidor al procesar la anulación hospitalaria.' });
     }
   },
-};
 
+  async trasladarPaciente(req, res) {
+    const { sequelize } = require('../models');
+    const t = await sequelize.transaction();
+
+    try {
+      const { id } = req.params; // ID de la internacion actual
+      const { id_nueva_habitacion, id_nueva_cama } = req.body;
+
+      // Buscamos la internación y al paciente que queremos cambiar de habitacion
+      const internacion = await Internacion.findByPk(id, {
+        include: [{ model: Paciente, as: 'Paciente' }],
+        transaction: t
+      });
+
+      if (!internacion || internacion.estado !== 'Activa') {
+        await t.rollback();
+        return res.status(404).json({ error: 'La internación no existe o ya no está activa.' });
+      }
+
+      if (internacion.id_cama == id_nueva_cama) {
+        await t.rollback();
+        return res.status(400).json({ error: 'El paciente ya se encuentra asignado a esa cama.' });
+      }
+
+      // Validamos la Cama Destino y si pertenece a la Habitación elegida
+      const nuevaCama = await Cama.findByPk(id_nueva_cama, { transaction: t });
+      if (!nuevaCama || nuevaCama.id_habitacion != id_nueva_habitacion) {
+        await t.rollback();
+        return res.status(400).json({ error: 'La cama seleccionada es inválida o no pertenece a esa habitación.' });
+      }
+
+      const estadoNuevaCama = nuevaCama.estado ? nuevaCama.estado.trim().toLowerCase() : '';
+      if (!["libre", "higienizada", "disponible"].includes(estadoNuevaCama)) {
+        await t.rollback();
+        return res.status(400).json({ error: 'La cama destino se encuentra ocupada o fuera de servicio.' });
+      }
+
+      // Validación del genero 
+      const internadosNuevaHab = await Internacion.findAll({
+        where: { id_habitacion: id_nueva_habitacion, estado: 'Activa' },
+        include: [{ model: Paciente, as: 'Paciente', attributes: ['genero'] }],
+        transaction: t
+      });
+
+      // Si hay pacientes en la nueva habitacion, vemos si el genero de alguno choca con el nuestro
+      const conflictoGenero = internadosNuevaHab.length > 0 && internadosNuevaHab.some(
+        (i) => i.Paciente.genero !== internacion.Paciente.genero
+      );
+
+      if (conflictoGenero) {
+        await t.rollback();
+        return res.status(400).json({ error: 'Conflicto de género: La habitación está ocupada por pacientes de otro sexo.' });
+      }
+
+      const id_cama_vieja = internacion.id_cama;
+
+      await nuevaCama.update({ estado: 'Ocupada' }, { transaction: t });
+
+      await internacion.update({
+        id_habitacion: id_nueva_habitacion,
+        id_cama: id_nueva_cama
+      }, { transaction: t });
+
+
+      if (id_cama_vieja) {
+        const camaVieja = await Cama.findByPk(id_cama_vieja, { transaction: t });
+        if (camaVieja) {
+          await camaVieja.update({ estado: 'higienizada' }, { transaction: t });
+        }
+      }
+
+      await t.commit();
+      return res.status(200).json({ message: 'El traslado de habitación se completó de manera exitosa.' });
+
+    } catch (error) {
+      await t.rollback();
+      console.error('Error al realizar el traslado de paciente:', error);
+      return res.status(500).json({ error: 'Error interno del servidor al procesar el traslado.' });
+    }
+  },
+};

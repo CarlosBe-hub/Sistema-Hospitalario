@@ -115,8 +115,17 @@ block content
                 )
                   i.bi.bi-person-check-fill
               
-              // Botón de Anulación 
+              // Botones para internaciones activas
               if internacion.estado === 'Activa'
+                //- 1. Botón de traslado integrado con los datos del paciente
+                button.btn.btn-sm.btn-warning.me-1(
+                  type="button"
+                  onclick=`abrirModalTraslado(${internacion.id_internacion}, '${internacion.Paciente ? internacion.Paciente.nombre + " " + internacion.Paciente.apellido : "Paciente"}')`
+                  title="Trasladar paciente de habitación y cama"
+                )
+                  i.bi.bi-arrows-move.me-1
+                  | Trasladar
+
                 button.btn.btn-sm.btn-outline-danger(
                   type="button"
                   onclick=`anularInternacionDirecto(${internacion.id_internacion})`
@@ -178,6 +187,39 @@ block content
                 button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
                 button.btn.btn-warning.fw-bold(type="submit") Guardar Identidad
 
+    // Modal Flotante de Traslado de Habitación
+    #modalTraslado.modal.fade(tabindex="-1" aria-labelledby="modalTrasladoLabel" aria-hidden="true")
+      .modal-dialog.modal-md
+        .modal-content
+          .modal-header.bg-warning.text-dark
+            h5#modalTrasladoLabel.modal-title
+              i.bi.bi-arrows-move.me-2
+              | Traslado de Habitación y Cama
+            button.btn-close(type="button" data-bs-dismiss="modal" aria-label="Close")
+          .modal-body
+            p.text-muted Reubicando al paciente: 
+              strong#textPacienteTraslado ...
+            
+            form#formTraslado
+              input#trasladoInternacionId(type="hidden")
+              
+              .mb-3
+                label.form-label.fw-bold Nueva Habitación Destino
+                select#selectHabitacion.form-select(required)
+                  option(value="" selected disabled) -- Seleccione Habitación --
+                  if habitaciones
+                    each hab in habitaciones
+                      option(value=hab.id_habitacion) Habitación #{hab.numero} (Capacidad total: #{hab.capacidad})
+              
+              .mb-3
+                label.form-label.fw-bold Nueva Cama Destino
+                select#selectCama.form-select(required disabled)
+                  option(value="" selected disabled) -- Seleccione primero una habitación --
+
+              .modal-footer.pe-0.pb-0
+                button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
+                button.btn.btn-warning.fw-bold(type="button" onclick="ejecutarTrasladoDirecto()") Confirmar Traslado
+
     hr
     h5.mt-4 Leyenda de Camas:
     p
@@ -227,6 +269,43 @@ block content
         $('#textDniTemporal').text(dniTemporal);
         $('#formIdentificar').attr('action', '/pacientes/identificar/' + idPaciente);
       });
+
+      // Manejador de cambio de habitación para rellenar las camas vía AJAX
+      $('#selectHabitacion').on('change', function() {
+        const idHabitacion = $(this).val();
+        const $selectCama = $('#selectCama');
+
+        if (!idHabitacion) {
+          $selectCama.html('<option value="" disabled selected>-- Seleccione primero una habitación --</option>').prop('disabled', true);
+          return;
+        }
+
+        // Buscamos las camas de esa habitación
+        $.ajax({
+          url: `/habitaciones/${idHabitacion}/camas`, 
+          method: 'GET',
+          success: function(res) {
+            let opciones = '<option value="" disabled selected>-- Seleccione Cama --</option>';
+            if (res && res.length > 0) {
+              res.forEach(cama => {
+                // Solo dejamos elegir camas libres, disponibles u higienizadas
+                const est = cama.estado.toLowerCase();
+                if (['libre', 'disponible', 'higienizada'].includes(est)) {
+                  opciones += `<option value="${cama.id_cama}">Cama ${cama.numero} (${cama.estado})</option>`;
+                } else {
+                  opciones += `<option value="${cama.id_cama}" disabled>Cama ${cama.numero} (${cama.estado} ❌)</option>`;
+                }
+              });
+            } else {
+              opciones = '<option value="" disabled>No hay camas en esta habitación</option>';
+            }
+            $selectCama.html(opciones).prop('disabled', false);
+          },
+          error: function() {
+            mostrarToastError('No se pudieron cargar las camas de la habitación.');
+          }
+        });
+      });
     });
 
     function anularInternacionDirecto(idInternacion) {
@@ -239,6 +318,51 @@ block content
         },
         error: function(err) {
           const msg = err.responseJSON?.error || 'No se pudo procesar la anulación de la internación.';
+          mostrarToastError(msg);
+        }
+      });
+    }
+
+    // Funciones para controlar el Modal de Traslado
+    function abrirModalTraslado(idInternacion, nombreCompleto) {
+      $('#trasladoInternacionId').val(idInternacion);
+      $('#textPacienteTraslado').text(nombreCompleto);
+      
+      // Resetear campos
+      $('#selectHabitacion').val('');
+      $('#selectCama').html('<option value="" disabled selected>-- Seleccione primero una habitación --</option>').prop('disabled', true);
+      
+      // Abrimos el modal con Bootstrap
+      const myModal = new bootstrap.Modal(document.getElementById('modalTraslado'));
+      myModal.show();
+    }
+
+    function ejecutarTrasladoDirecto() {
+      const idInternacion = $('#trasladoInternacionId').val();
+      const idNuevaHabitacion = $('#selectHabitacion').val();
+      const idNuevaCama = $('#selectCama').val();
+
+      if (!idNuevaHabitacion || !idNuevaCama) {
+        mostrarToastError('Debe seleccionar una habitación y una cama de destino.');
+        return;
+      }
+
+      $.ajax({
+        url: `/internacion/${idInternacion}/trasladar`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          id_nueva_habitacion: idNuevaHabitacion,
+          id_nueva_cama: idNuevaCama
+        }),
+        success: function(res) {
+          // Ocultamos el modal
+          bootstrap.Modal.getInstance(document.getElementById('modalTraslado')).hide();
+          dispararToastSuccess(res.message || 'Paciente trasladado con éxito.');
+          setTimeout(() => { location.reload(); }, 1500);
+        },
+        error: function(err) {
+          const msg = err.responseJSON?.error || 'No se pudo realizar el traslado del paciente.';
           mostrarToastError(msg);
         }
       });
