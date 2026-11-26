@@ -19,6 +19,7 @@ const internacionRoutes = require('./routes/internacion');
 const emergenciaRoutes = require('./routes/emergencia'); 
 const medicoRoutes = require('./routes/medico');         
 const enfermeriaRoutes = require('./routes/enfermeria');
+const habitacionesRoutes = require('./routes/habitaciones');
 
 // Configuración del motor de vistas
 app.set('view engine', 'pug');
@@ -38,24 +39,21 @@ app.use(methodOverride('_method'));
 // Middleware core 
 require('./middlewares/core')(app);
 
-
 // Rutas públicas de Login 
 app.get('/login', authController.mostrarLogin);
 app.post('/login', authController.procesarLogin);
 app.get('/logout', authController.logout);
 
-
-// Proteger todas las rutas anteponiendo el middleware checkRole
-app.use('/pacientes', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), pacientesRoutes);
+// Proteger rutas según la matriz de roles
+app.use('/pacientes', checkRole(['admin', 'recepcion']), pacientesRoutes);
 app.use('/admision', checkRole(['admin', 'recepcion']), admisionRoutes);
-app.use('/internacion', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), internacionRoutes);
+app.use('/internacion', checkRole(['admin', 'recepcion', 'enfermero']), internacionRoutes);
+app.use('/habitaciones', checkRole(['admin', 'recepcion', 'enfermero']), habitacionesRoutes);
 app.use('/emergencia', checkRole(['admin', 'recepcion']), emergenciaRoutes); 
 app.use('/medico', checkRole(['admin', 'medico']), medicoRoutes);         
 app.use('/enfermeria', checkRole(['admin', 'enfermero']), enfermeriaRoutes); 
-app.use('/habitaciones', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), require('./routes/habitaciones'));
 
-
-// Proteger la ruta principal (Raíz) y agregar la redirección '/inicio'
+// Rutas principales protegidas para cualquier usuario autenticado
 app.get('/', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), (req, res) => {
   res.render('iniciohospital');
 });
@@ -63,7 +61,6 @@ app.get('/', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), (req, res
 app.get('/inicio', checkRole(['admin', 'medico', 'enfermero', 'recepcion']), (req, res) => {
   res.render('iniciohospital');
 });
-
 
 // Middleware para manejar rutas no encontradas (404)
 app.use(require('./middlewares/notFound'));

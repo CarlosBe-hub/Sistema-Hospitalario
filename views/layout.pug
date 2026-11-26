@@ -18,97 +18,100 @@ html
 
   body
     // Sidebar
-    .sidebar
-      .text-center.mb-4.pt-3
-        h5.text-white.fw-bold.px-2 Hospital San Carlos 
+    .sidebar(style="overflow-y: auto;")
+      .text-center.mb-3.pt-3.px-2
+        h5.text-white.fw-bold Hospital San Carlos 
         
-        // Info del usuario que esta logueado
+        // Info del usuario logueado, rol y botón de cierre de sesión
         if user
-          span.badge.bg-light.text-dark.mt-1.px-3.py-2.rounded-pill.shadow-sm
-            i.bi.bi-person-circle.me-1
-            | #{user.nombre}
+          .mt-2
+            span.badge.bg-light.text-dark.px-3.py-2.rounded-pill.shadow-sm
+              i.bi.bi-person-circle.me-1
+              | #{user.nombre}
+            .mt-1
+              span.badge.bg-info.text-dark.text-uppercase #{user.rol}
+            .mt-2
+              a.btn.btn-danger.btn-sm.w-75.fw-bold.shadow-sm(href="/logout")
+                i.bi.bi-box-arrow-left.me-1
+                | Cerrar Sesión
       
-      nav.nav.flex-column
-    
-        a.nav-link.text-white(class=activePage == '/' ? 'fw-bold text-primary' : '', href='/')
-          i.bi.bi-house-door.me-2
-          | Inicio 
+      if user
+        nav.nav.flex-column.pb-4
+          a.nav-link.text-white(class=activePage == '/inicio' ? 'fw-bold text-primary' : '', href='/inicio')
+            i.bi.bi-house-door.me-2
+            | Inicio 
 
-        // Gestion Hopitalaria (Solo admin y recepción)
-        if !user || (user && (user.rol === 'admin' || user.rol === 'recepcion'))
-          small.text-white-50.px-3.text-uppercase.fw-bold.mt-3.mb-1 Gestión Hospitalaria
-          
-          a.nav-link.text-white(class=activePage == '/pacientes' ? 'fw-bold text-primary' : '', href='/pacientes')
-            i.bi.bi-people-fill.me-2
-            | Pacientes 
+          // Gestión Hospitalaria (Solo Admin y Recepción)
+          if ['admin', 'recepcion'].includes(user.rol)
+            small.text-white-50.px-3.text-uppercase.fw-bold.mt-3.mb-1 Gestión Hospitalaria
+            
+            a.nav-link.text-white(class=activePage == '/pacientes' ? 'fw-bold text-primary' : '', href='/pacientes')
+              i.bi.bi-people-fill.me-2
+              | Pacientes 
 
-          a.nav-link.text-white(class=activePage == '/admision' ? 'fw-bold text-primary' : '', href='/admision')
-            i.bi.bi-journal-plus.me-2
-            | Admisión 
+            a.nav-link.text-white(class=activePage == '/admision' ? 'fw-bold text-primary' : '', href='/admision')
+              i.bi.bi-journal-plus.me-2
+              | Admisión 
 
-        // Internaciones y Habitaciones
-        if !user || (user && ['admin', 'medico', 'enfermero', 'recepcion'].includes(user.rol))
-          a.nav-link.text-white(class=activePage == '/internacion/nueva' ? 'fw-bold text-primary' : '', href='/internacion/nueva')
-            i.bi.bi-plus-circle.me-2
-            | Nueva Internación
+          // Internación y Camas (Admin, Recepción y Enfermería)
+          if ['admin', 'recepcion', 'enfermero'].includes(user.rol)
+            small.text-white-50.px-3.text-uppercase.fw-bold.mt-3.mb-1 Internación y Camas
 
-          a.nav-link.text-white(class=activePage == '/internacion/listado' ? 'fw-bold text-primary' : '', href='/internacion/listado')
-            i.bi.bi-table.me-2
-            | Listado Internaciones
+            a.nav-link.text-white(class=activePage == '/internacion/nueva' ? 'fw-bold text-primary' : '', href='/internacion/nueva')
+              i.bi.bi-plus-circle.me-2
+              | Nueva Internación
 
-          a.nav-link.text-white(class=activePage == '/habitaciones/mapa' ? 'fw-bold text-primary' : '', href="/habitaciones/mapa")
-            i.bi.bi-grid-3x3-gap-fill.me-2
-            | Gestión De Habitaciones
+            a.nav-link.text-white(class=activePage == '/internacion/listado' ? 'fw-bold text-primary' : '', href='/internacion/listado')
+              i.bi.bi-table.me-2
+              | Listado Internaciones
 
-        // Modulos clínicos 
-        if !user || (user && ['admin', 'medico', 'enfermero'].includes(user.rol))
-          small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Módulos Clínicos
+            a.nav-link.text-white(class=activePage == '/habitaciones/mapa' ? 'fw-bold text-primary' : '', href='/habitaciones/mapa')
+              i.bi.bi-grid-3x3-gap-fill.me-2
+              | Gestión De Habitaciones
 
-        // Submodulos de enfermeria
-        if !user || (user && (user.rol === 'admin' || user.rol === 'enfermero'))
-          a.nav-link.text-white(class=activePage == '/enfermeria' ? 'fw-bold text-primary' : '', href='/enfermeria')
-            i.bi.bi-clipboard-pulse.me-2
-            | Enfermería 
+          // Submódulos de Enfermería (Admin y Enfermero)
+          if ['admin', 'enfermero'].includes(user.rol)
+            small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Módulos Clínicos
 
-          a.nav-link.text-white(class=activePage == '/cuidados-enfermeria' ? 'fw-bold text-primary' : '', href='/cuidados-enfermeria')
-            i.bi.bi-heart-pulse.me-2
-            | Cuidados Enfermería 
+            a.nav-link.text-white(class=activePage == '/enfermeria' ? 'fw-bold text-primary' : '', href='/enfermeria')
+              i.bi.bi-clipboard-pulse.me-2
+              | Enfermería 
 
-        // Submódulos de medicos
-        if !user || (user && (user.rol === 'admin' || user.rol === 'medico'))
-          a.nav-link.text-white(class=activePage == '/medico' ? 'fw-bold text-primary' : '', href='/medico')
-            i.bi.bi-stethoscope.me-2
-            | Evaluación Médica 
+            a.nav-link.text-white(class=activePage == '/cuidados-enfermeria' ? 'fw-bold text-primary' : '', href='/cuidados-enfermeria')
+              i.bi.bi-heart-pulse.me-2
+              | Cuidados Enfermería 
 
-          a.nav-link.text-white(class=activePage == '/medico/historial' ? 'fw-bold text-primary' : '', href='/medico/historial')
-            i.bi.bi-clock-history.me-2
-            | Historial Médico 
+          // Submódulos de Médicos (Admin y Médico)
+          if ['admin', 'medico'].includes(user.rol)
+            if user.rol === 'medico'
+              small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Módulos Clínicos
 
-        // Modulo de emergencia 
-        if !user || (user && (user.rol === 'admin' || user.rol === 'recepcion'))
-          small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Alertas
-          a.nav-link.text-danger.fw-bold(class=activePage == '/emergencia/crear' ? 'bg-danger text-white rounded mx-2 px-2' : '', href='/emergencia/crear')
-            i.bi.bi-exclamation-triangle-fill.me-2
-            | Crear Paciente NN
+            a.nav-link.text-white(class=activePage == '/medico' ? 'fw-bold text-primary' : '', href='/medico')
+              i.bi.bi-stethoscope.me-2
+              | Evaluación Médica 
 
-        // Solo Admins
-        if !user || (user && user.rol === 'admin')
-          small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Administración
-          
-          a.nav-link.text-white(class=activePage == '/medico/GestionMedico' ? 'fw-bold text-primary' : '', href='/medico/GestionMedico')
-            i.bi.bi-person-vcard.me-2
-            | Gestionar Médicos
+            a.nav-link.text-white(class=activePage == '/medico/historial' ? 'fw-bold text-primary' : '', href='/medico/historial')
+              i.bi.bi-clock-history.me-2
+              | Historial Médico 
 
-          a.nav-link.text-white(class=activePage == '/enfermero/GestionEnfermero' ? 'fw-bold text-primary' : '', href='/enfermeria/gestionEnfermero')
-            i.bi.bi-person-badge.me-2
-            | Gestionar Enfermeros 
+          // Módulo de Emergencia (Admin y Recepción)
+          if ['admin', 'recepcion'].includes(user.rol)
+            small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Alertas
+            a.nav-link.text-danger.fw-bold(class=activePage == '/emergencia/crear' ? 'bg-danger text-white rounded mx-2 px-2' : '', href='/emergencia/crear')
+              i.bi.bi-exclamation-triangle-fill.me-2
+              | Crear Paciente NN
 
-        // Boton para cerrar sesión 
-        if user
-          hr.text-white-50.my-4
-          a.nav-link.text-white.bg-danger.rounded.mx-3.mb-4.text-center(href="/logout" style="padding: 8px;")
-            i.bi.bi-box-arrow-left.me-2
-            span.fw-bold Cerrar Sesión
+          // Solo Admins
+          if user.rol === 'admin'
+            small.text-white-50.px-3.text-uppercase.fw-bold.mt-4.mb-1 Administración
+            
+            a.nav-link.text-white(class=activePage == '/medico/GestionMedico' ? 'fw-bold text-primary' : '', href='/medico/GestionMedico')
+              i.bi.bi-person-vcard.me-2
+              | Gestionar Médicos
+
+            a.nav-link.text-white(class=activePage == '/enfermero/GestionEnfermero' ? 'fw-bold text-primary' : '', href='/enfermeria/gestionEnfermero')
+              i.bi.bi-person-badge.me-2
+              | Gestionar Enfermeros 
 
     // Contenido principal
     .content
