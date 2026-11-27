@@ -3,11 +3,15 @@ const calcularEdad = require('../utils/calcularEdad');
 const ObraSocial = require('../models/ObraSocialModel');
 const { Op } = require('sequelize');
 
-// Mostrar vista principal de pacientes activos
+// Mostrar vista principal de pacientes activos 
 const verActivos = async (req, res) => {
   try {
     const pacientes = await Paciente.findAll({
-      where: { estado: 'Activo' },
+      where: {
+        estado: 'Activo',
+        es_nn: false,
+        dni: { [Op.notLike]: 'NN-%' }
+      },
       include: [{ model: ObraSocial, as: 'obraSocial' }]
     });
 
@@ -22,6 +26,7 @@ const verActivos = async (req, res) => {
         fechaISO: p.fecha_nacimiento ? p.fecha_nacimiento.toISOString() : null
       };
     });
+
     let errorMsg = null;
     if (req.query.error === 'dni') {
       errorMsg = 'El DNI ingresado ya se encuentra registrado por otro paciente.';
@@ -38,7 +43,7 @@ const verActivos = async (req, res) => {
     res.render('pacientes/pacientes', {
       pacientes: pacientesProcesados,
       obrasSociales,
-      errorMsg, 
+      errorMsg,
       query: req.query
     });
   } catch (error) {
@@ -95,7 +100,6 @@ const crearPaciente = async (req, res) => {
       id_obra_social: idObraSocial
     });
 
-    // Redirigir sin error pero con abrir modal para limpiar form 
     res.redirect('/pacientes?nuevo=1&success=1');
   } catch (error) {
     console.error('Error al crear paciente:', error);
@@ -105,7 +109,13 @@ const crearPaciente = async (req, res) => {
 
 const obtenerTodosPacientes = async (req, res) => {
   try {
-    const pacientes = await Paciente.findAll({ where: { estado: 'Activo' } });
+    const pacientes = await Paciente.findAll({
+      where: {
+        estado: 'Activo',
+        es_nn: false,
+        dni: { [Op.notLike]: 'NN-%' }
+      }
+    });
     res.json({ data: pacientes });
   } catch (error) {
     console.error('Error al obtener pacientes:', error);
@@ -148,7 +158,7 @@ const actualizarPaciente = async (req, res) => {
     const dniRepetido = await Paciente.findOne({
       where: {
         dni: dni.trim(),
-        id_paciente: { [Op.ne]: id } 
+        id_paciente: { [Op.ne]: id }
       }
     });
 
@@ -159,17 +169,15 @@ const actualizarPaciente = async (req, res) => {
     if (estado === 'Inactivo') {
       const { Internacion, Admision } = require('../models');
 
-      // Verificar si el paciente está actualmente durmiendo en una cama activa
-      const internado = await Internacion.findOne({ 
-        where: { id_paciente: id, estado: 'Activa' } 
+      const internado = await Internacion.findOne({
+        where: { id_paciente: id, estado: 'Activa' }
       });
       if (internado) {
         return res.redirect('/pacientes?error=paciente_internado');
       }
 
-      // Verificar si tiene una admisión activa 
-      const admitido = await Admision.findOne({ 
-        where: { id_paciente: id, estado: 'activo' } 
+      const admitido = await Admision.findOne({
+        where: { id_paciente: id, estado: 'activo' }
       });
       if (admitido) {
         return res.redirect('/pacientes?error=paciente_admitido');
@@ -193,7 +201,7 @@ const actualizarPaciente = async (req, res) => {
         telefono,
         contacto_emergencia,
         direccion,
-        estado, 
+        estado,
         id_obra_social: idObraSocial
       },
       { where: { id_paciente: id } }
@@ -212,25 +220,23 @@ const toggleEstado = async (req, res) => {
     if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado' });
 
     if (paciente.estado === 'Activo') {
-      const { Internacion, Admision } = require('../models'); 
-      
-      // Verificar si está en una cama con internación activa
-      const internado = await Internacion.findOne({ 
-        where: { id_paciente: paciente.id_paciente, estado: 'Activa' } 
+      const { Internacion, Admision } = require('../models');
+
+      const internado = await Internacion.findOne({
+        where: { id_paciente: paciente.id_paciente, estado: 'Activa' }
       });
       if (internado) {
-        return res.status(400).json({ 
-          error: 'No se puede desactivar el paciente porque se encuentra actualmente internado.' 
+        return res.status(400).json({
+          error: 'No se puede desactivar el paciente porque se encuentra actualmente internado.'
         });
       }
 
-      // Verificar si tiene una admisión activa 
-      const admitido = await Admision.findOne({ 
-        where: { id_paciente: paciente.id_paciente, estado: 'activo' } 
+      const admitido = await Admision.findOne({
+        where: { id_paciente: paciente.id_paciente, estado: 'activo' }
       });
       if (admitido) {
-        return res.status(400).json({ 
-          error: 'No se puede desactivar el paciente porque tiene una admisión en curso.' 
+        return res.status(400).json({
+          error: 'No se puede desactivar el paciente porque tiene una admisión en curso.'
         });
       }
     }
@@ -245,7 +251,7 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-// Validar si un DNI ya existe 
+// Validar si un DNI ya existe
 const validarDNI = async (req, res) => {
   try {
     const { dni } = req.params;
@@ -254,58 +260,125 @@ const validarDNI = async (req, res) => {
     }
 
     const pacienteExistente = await Paciente.findOne({ where: { dni: dni.trim() } });
-
-    if (pacienteExistente) {
-      return res.status(200).json({ existe: true });
-    } else {
-      return res.status(200).json({ existe: false });
-    }
+    return res.status(200).json({ existe: !!pacienteExistente });
   } catch (error) {
     console.error('Error validando DNI:', error);
     res.status(500).json({ error: 'Error validando DNI' });
   }
 };
 
+// Buscar datos completos de un paciente por DNI 
+const buscarPorDNI = async (req, res) => {
+  try {
+    const { dni } = req.params;
+    if (!dni || dni.trim().length < 6) {
+      return res.status(400).json({ encontrado: false, error: 'DNI inválido' });
+    }
+
+    const paciente = await Paciente.findOne({
+      where: {
+        dni: dni.trim(),
+        es_nn: false
+      }
+    });
+
+    if (!paciente) {
+      return res.status(200).json({ encontrado: false });
+    }
+
+    const edad = calcularEdad(paciente.fecha_nacimiento);
+
+    return res.status(200).json({
+      encontrado: true,
+      paciente: {
+        id_paciente: paciente.id_paciente,
+        nombre: paciente.nombre,
+        apellido: paciente.apellido,
+        genero: paciente.genero,
+        edad: edad !== null ? edad : '',
+        telefono: paciente.telefono || '',
+        id_obra_social: paciente.id_obra_social || ''
+      }
+    });
+  } catch (error) {
+    console.error('Error buscando paciente por DNI:', error);
+    res.status(500).json({ encontrado: false, error: 'Error interno al buscar DNI' });
+  }
+};
+
 // Procesar los datos reales del paciente NN desde el modal flotante
 const procesarIdentificacionNN = async (req, res) => {
+  const { sequelize, Internacion, Admision } = require('../models');
+  const t = await sequelize.transaction();
+
   try {
-    const { nombre, apellido, dni, genero, edad, telefono, id_obra_social } = req.body; 
+    const { nombre, apellido, dni, genero, edad, telefono, id_obra_social } = req.body;
     const { id } = req.params;
 
-    const paciente = await Paciente.findByPk(id);
-    if (!paciente) {
-      return res.status(404).send('Paciente no encontrado.');
+    const pacienteNN = await Paciente.findByPk(id, { transaction: t });
+    if (!pacienteNN) {
+      await t.rollback();
+      return res.status(404).send('Registro NN no encontrado.');
     }
 
-    // Validar que el DNI real ingresado no exista ya en otro paciente
-    const dniExistente = await Paciente.findOne({ where: { dni: dni.trim() } });
-    if (dniExistente) {
-      return res.redirect('/internacion/listado?error=dni_duplicado');
-    }
+    const dniLimpio = dni.trim();
+    const obraSocialAsignada = (id_obra_social && id_obra_social !== '') ? parseInt(id_obra_social) : null;
 
-    // Calculamos una fecha de nacimiento aproximada
     let fechaNacimiento = null;
     if (edad && !isNaN(parseInt(edad))) {
       const anioNacimiento = new Date().getFullYear() - parseInt(edad);
       fechaNacimiento = new Date(`${anioNacimiento}-01-01`);
     }
 
-    // Parseamos el ID de la obra social
-    const obraSocialAsignada = (id_obra_social && id_obra_social !== "") ? parseInt(id_obra_social) : null;
-
-    await paciente.update({
-      nombre,
-      apellido,
-      genero,
-      dni: dni.trim(),
-      fecha_nacimiento: fechaNacimiento,
-      telefono: telefono || null,
-      id_obra_social: obraSocialAsignada, 
-      estado: 'Activo'
+    // Verificar si el DNI ya pertenece a un paciente real existente en el sistema
+    const pacienteExistente = await Paciente.findOne({
+      where: {
+        dni: dniLimpio,
+        id_paciente: { [Op.ne]: pacienteNN.id_paciente }
+      },
+      transaction: t
     });
 
+    if (pacienteExistente) {
+      await Internacion.update(
+        { id_paciente: pacienteExistente.id_paciente },
+        { where: { id_paciente: pacienteNN.id_paciente }, transaction: t }
+      );
+
+      if (Admision) {
+        await Admision.update(
+          { id_paciente: pacienteExistente.id_paciente },
+          { where: { id_paciente: pacienteNN.id_paciente }, transaction: t }
+        );
+      }
+
+      // Actualizar datos de contacto obra social si se completaron en el modal
+      await pacienteExistente.update({
+        telefono: telefono || pacienteExistente.telefono,
+        id_obra_social: obraSocialAsignada || pacienteExistente.id_obra_social,
+        estado: 'Activo'
+      }, { transaction: t });
+
+      // Borrar el registro temporal NN
+      await pacienteNN.destroy({ transaction: t });
+    } else {
+      await pacienteNN.update({
+        nombre,
+        apellido,
+        genero,
+        dni: dniLimpio,
+        fecha_nacimiento: fechaNacimiento,
+        telefono: telefono || null,
+        id_obra_social: obraSocialAsignada,
+        estado: 'Activo',
+        es_nn: false
+      }, { transaction: t });
+    }
+
+    await t.commit();
     res.redirect('/internacion/listado');
   } catch (error) {
+    await t.rollback();
     console.error('Error al identificar paciente NN:', error);
     res.status(500).send('Error al procesar la identificación del paciente.');
   }
@@ -319,5 +392,6 @@ module.exports = {
   toggleEstado,
   crearPaciente,
   validarDNI,
+  buscarPorDNI,
   procesarIdentificacionNN
 };

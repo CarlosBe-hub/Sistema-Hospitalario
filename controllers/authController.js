@@ -7,7 +7,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "secreto_super_seguro_hospital_ulp_
 module.exports = {
   // Mostrar la vista del formulario de Login
   mostrarLogin(req, res) {
-    // Mandamos mensajeError como null para que la primera vez no muestre alertas rojas
     res.render('login', { error: null });
   },
 
@@ -15,16 +14,16 @@ module.exports = {
     try {
       const { email, password } = req.body;
 
-      const usuario = await Usuario.findOne({ where: { email }, include: [{ model: Rol, as: 'rol' }] });
-      
-      console.log("1. ¿Encontró al usuario en MySQL?:", usuario ? "SÍ" : "NO");
+      const usuario = await Usuario.findOne({ 
+        where: { email }, 
+        include: [{ model: Rol, as: 'rol' }] 
+      });
 
       if (!usuario) {
         return res.render('login', { error: 'El correo electrónico o la contraseña son incorrectos.' });
       }
 
       const passwordCorrecto = await bcrypt.compare(password, usuario.password);
-      console.log("2. ¿La contraseña dio true con bcrypt?:", passwordCorrecto);
 
       if (!passwordCorrecto) {
         return res.render('login', { error: 'El correo electrónico o la contraseña son incorrectos.' });
@@ -46,7 +45,7 @@ module.exports = {
         maxAge: 8 * 60 * 60 * 1000 
       });
 
-      return res.redirect('/inicio');
+      return res.redirect('/inicio?bienvenido=1');
 
     } catch (error) {
       console.error('Error crítico en el proceso de Login:', error);
@@ -55,7 +54,7 @@ module.exports = {
   },
 
   logout(req, res) {
-    res.clearCookie('jwt'); // Borra la cookie del cliente
-    return res.redirect('/login'); // Lo manda a la entrada del sistema
+    res.clearCookie('jwt');
+    return res.redirect('/login');
   }
 };

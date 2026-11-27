@@ -1,6 +1,7 @@
 const { 
   Internacion, Paciente, SignosVitales, HistorialMedico, 
-  CuidadosEnfermeria, Cama, Habitacion, Enfermero 
+  CuidadosEnfermeria, Cama, Habitacion, Enfermero,
+  Tratamiento, Medico, Alergia, PacienteAlergia
 } = require('../models');
 const { Op } = require('sequelize');
 
@@ -34,10 +35,24 @@ exports.detallePaciente = async (req, res) => {
 
     const internacion = await Internacion.findByPk(id_internacion, {
       include: [
-        { model: Paciente, as: 'Paciente' },
+        { 
+          model: Paciente, 
+          as: 'Paciente',
+          include: [
+            {
+              model: PacienteAlergia,
+              as: 'AlergiasPaciente',
+              include: [{ model: Alergia, as: 'Alergia' }]
+            }
+          ]
+        },
         { model: HistorialMedico },
         { model: SignosVitales },
-        { model: CuidadosEnfermeria }
+        { model: CuidadosEnfermeria },
+        { 
+          model: Tratamiento,
+          include: [{ model: Medico }]
+        }
       ]
     });
 
@@ -45,10 +60,53 @@ exports.detallePaciente = async (req, res) => {
       return res.status(404).json({ error: 'Internación no encontrada.' });
     }
 
-    res.render('enfermeria/detalle_evaluacion', { internacion });
+    const catalogoAlergias = await Alergia.findAll({
+      order: [['nombre', 'ASC']]
+    });
+
+    res.render('enfermeria/detalle_evaluacion', { 
+      internacion,
+      catalogoAlergias
+    });
   } catch (error) {
     console.error('Error al obtener detalle:', error);
     res.status(500).json({ error: 'Error al cargar el detalle' });
+  }
+};
+
+// Registrar o actualizar Alergia del Paciente 
+exports.guardarAlergiaPaciente = async (req, res) => {
+  try {
+    const { id_paciente, id_alergia, severidad, observaciones } = req.body;
+
+    if (!id_paciente || !id_alergia) {
+      return res.status(400).json({ error: 'Debe seleccionar una alergia válida.' });
+    }
+
+    const existente = await PacienteAlergia.findOne({
+      where: { id_paciente, id_alergia }
+    });
+
+    if (existente) {
+      await existente.update({
+        severidad: severidad || 'Moderada',
+        observaciones: observaciones || null,
+        fecha_registro: new Date()
+      });
+    } else {
+      await PacienteAlergia.create({
+        id_paciente,
+        id_alergia,
+        severidad: severidad || 'Moderada',
+        observaciones: observaciones || null,
+        fecha_registro: new Date()
+      });
+    }
+
+    res.status(200).json({ mensaje: 'Alergia registrada correctamente en la ficha del paciente.' });
+  } catch (error) {
+    console.error('Error al guardar alergia del paciente:', error);
+    res.status(500).json({ error: 'Error al registrar la alergia.' });
   }
 };
 
@@ -184,7 +242,7 @@ exports.crearEnfermero = async (req, res) => {
     const existeMatricula = await Enfermero.findOne({ where: { nro_matricula } });
     if (existeMatricula) {
       const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
-      return res.render('enfermero/gestionEnfermero', {
+      return res.render('enfermeria/gestionEnfermero', {
         enfermeros,
         errorMsg: `La matrícula '${nro_matricula}' ya está registrada por otro enfermero.`
       });
@@ -193,7 +251,7 @@ exports.crearEnfermero = async (req, res) => {
     const existeDni = await Enfermero.findOne({ where: { dni } });
     if (existeDni) {
       const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
-      return res.render('enfermero/gestionEnfermero', {
+      return res.render('enfermeria/gestionEnfermero', {
         enfermeros,
         errorMsg: `El DNI '${dni}' ya pertenece a un enfermero del sistema.`
       });
@@ -224,7 +282,7 @@ exports.editarEnfermero = async (req, res) => {
     });
     if (dniRepetido) {
       const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
-      return res.render('enfermero/gestionEnfermero', {
+      return res.render('enfermeria/gestionEnfermero', {
         enfermeros,
         errorMsg: `El DNI '${dni}' ya está registrado por otro enfermero.`
       });
@@ -235,7 +293,7 @@ exports.editarEnfermero = async (req, res) => {
     });
     if (matriculaRepetida) {
       const enfermeros = await Enfermero.findAll({ order: [['id_enfermero', 'DESC']] });
-      return res.render('enfermero/gestionEnfermero', {
+      return res.render('enfermeria/gestionEnfermero', {
         enfermeros,
         errorMsg: `La matrícula '${nro_matricula}' ya pertenece a otro enfermero.`
       });

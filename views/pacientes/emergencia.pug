@@ -13,7 +13,7 @@ block content
           .card-body.p-4
             .alert.alert-warning.mb-4
               i.bi.bi-info-circle-fill.me-2
-              | Se creará un registro temporal. El sistema buscará y asignará automáticamente la primera cama libre en la habitación que seleccione.
+              | Se creará un registro temporal oculto del padrón general hasta su identificación. El sistema asignará automáticamente la primera cama disponible de la habitación elegida.
 
             if error
               .alert.alert-danger= error
@@ -31,14 +31,16 @@ block content
                       )= motivo.descripcion
 
                 .col-md-6
-                  label.form-label.fw-bold(for='id_habitacion') Habitación
+                  label.form-label.fw-bold(for='id_habitacion') Habitación Disponible
                   select.form-select(name='id_habitacion', required)
                     option(value='') Selecciona una habitación
                     each habitacion in habitaciones
+                      - var nombreAla = habitacion.Ala ? habitacion.Ala.nombre : 'Sin Ala'
+                      - var cantCamas = habitacion.Camas ? habitacion.Camas.length : 1
                       option(
                         value=habitacion.id_habitacion, 
                         selected=(typeof id_habitacion !== 'undefined' && id_habitacion == habitacion.id_habitacion)
-                      )= `Habitación ${habitacion.numero}`
+                      )= `${nombreAla} - Hab. ${habitacion.numero} (${cantCamas} cama${cantCamas > 1 ? 's' : ''} libre${cantCamas > 1 ? 's' : ''})`
 
               .row.mb-4
                 .col-md-12
@@ -72,7 +74,7 @@ block scripts
       
       if (params.get('success') === '1') {
         const toastEl = document.getElementById('emergenciaToast');
-        const toast = new bootstrap.Toast(toastEl, { delay: 5000 }); // Desaparece a los 5 seg
+        const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
         toast.show();
         
         window.history.replaceState({}, document.title, window.location.pathname);

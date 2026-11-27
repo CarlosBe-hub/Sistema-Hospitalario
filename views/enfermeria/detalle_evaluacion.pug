@@ -8,8 +8,8 @@ block content
         | Evaluación de Enfermería
       a.btn.btn-outline-secondary(href="/enfermeria") Volver al listado
 
-    // Tarjeta de Informacion del Paciente
-    .card.mb-4.shadow-sm
+    // Tarjeta de Información del Paciente
+    .card.mb-3.shadow-sm
       .card-body
         .row
           .col-md-3
@@ -19,11 +19,22 @@ block content
             strong DNI: 
             | #{internacion.Paciente.dni}
           .col-md-3
-            strong Edad: 
-            | #{internacion.Paciente.edad || 'N/D'} años
-          .col-md-3
             strong Género: 
             | #{internacion.Paciente.genero}
+          .col-md-3
+            strong Alergias: 
+            if internacion.Paciente.AlergiasPaciente && internacion.Paciente.AlergiasPaciente.length > 0
+              span.badge.bg-danger #{internacion.Paciente.AlergiasPaciente.length} registrada(s)
+            else
+              span.badge.bg-success Sin alergias registradas
+
+    // Cartel de Alerta si el paciente tiene alergias
+    if internacion.Paciente.AlergiasPaciente && internacion.Paciente.AlergiasPaciente.length > 0
+      .alert.alert-danger.shadow-sm.mb-4
+        i.bi.bi-exclamation-triangle-fill.me-2
+        strong ¡ATENCIÓN — ALERGIAS REGISTRADAS!: 
+        each pa in internacion.Paciente.AlergiasPaciente
+          span.badge.bg-dark.ms-2 #{pa.Alergia ? pa.Alergia.nombre : 'Alergia'} (#{pa.severidad})
 
     // Pestañas de Evaluación
     ul.nav.nav-tabs#evaluacionTabs(role="tablist")
@@ -32,18 +43,21 @@ block content
       li.nav-item(role="presentation")
         button.nav-link#historial-tab(data-bs-toggle="tab", data-bs-target="#historial", type="button", role="tab") Historial Médico Inicial
       li.nav-item(role="presentation")
-        button.nav-link#cuidados-tab(data-bs-toggle="tab", data-bs-target="#cuidados", type="button", role="tab") Plan de Cuidados
+        button.nav-link#alergias-tab(data-bs-toggle="tab", data-bs-target="#alergias", type="button", role="tab")
+          i.bi.bi-shield-exclamation.me-1.text-danger
+          | Alergias (3FN)
+      li.nav-item(role="presentation")
+        button.nav-link#cuidados-tab(data-bs-toggle="tab", data-bs-target="#cuidados", type="button", role="tab") Plan de Cuidados y Medicación
 
     .tab-content.p-4.border.border-top-0.bg-white.shadow-sm#evaluacionTabsContent
       
       // SIGNOS VITALES 
       .tab-pane.fade.show.active#signos(role="tabpanel")
-        if internacion.SignosVitales && internacion.SignosVitales.length > 0
+        - var ultimoControl = (internacion.SignosVitales && internacion.SignosVitales.length > 0) ? internacion.SignosVitales[0] : {}
+        if ultimoControl.id_signos
           h5.text-success Signos Vitales Registrados
-          - var ultimoControl = internacion.SignosVitales[0]
         else
           h5 Registrar Signos Vitales
-          - var ultimoControl = {}
 
         form#formSignos
           input(type="hidden", name="id_internacion", value=internacion.id_internacion)
@@ -72,14 +86,13 @@ block content
             button.btn.btn-primary(type="submit") Guardar Signos Vitales
           div#msgSignos.mt-2
 
-      // HISTORIAL MEDICO
+      // HISTORIAL MÉDICO INICIAL
       .tab-pane.fade#historial(role="tabpanel")
-        if internacion.HistorialMedicos && internacion.HistorialMedicos.length > 0
+        - var hClinico = (internacion.HistorialMedicos && internacion.HistorialMedicos.length > 0) ? internacion.HistorialMedicos[0] : {}
+        if hClinico.id_historialmedico
           h5.text-success Historial Clínico de Ingreso Registrado
-          - var hClinico = internacion.HistorialMedicos[0]
         else
           h5 Historial Clínico de Ingreso
-          - var hClinico = {}
 
         form#formHistorial
           input(type="hidden", name="id_internacion", value=internacion.id_internacion)
@@ -104,7 +117,7 @@ block content
 
           .row.mb-3
             .col-md-4
-              label.form-label Alergias
+              label.form-label Observaciones de Alergias (Ingreso)
               input.form-control(type="text", name="alergias", value=hClinico.alergias, readonly=hClinico.id_historialmedico)
             .col-md-4
               label.form-label Cirugías
@@ -117,50 +130,151 @@ block content
             button.btn.btn-primary(type="submit") Guardar Historial Médico
           div#msgHistorial.mt-2
 
-      // PLAN DE CUIDADOS 
-      .tab-pane.fade#cuidados(role="tabpanel")
-        if internacion.CuidadosEnfermerias && internacion.CuidadosEnfermerias.length > 0
-          h5.text-success Plan Preliminar de Cuidados Registrado
-          - var planCuid = internacion.CuidadosEnfermerias[0]
-        else
-          h5 Plan Preliminar de Cuidados
-          - var planCuid = {}
+      // ALERGIAS DEL PACIENTE (TABLA NORMALIZADA 3FN)
+      .tab-pane.fade#alergias(role="tabpanel")
+        h5.mb-3 Registrar Alergia en Ficha del Paciente
+        form#formAlergia.p-3.bg-light.border.rounded.mb-4
+          input(type="hidden", name="id_paciente", value=internacion.id_paciente)
+          .row.g-3.align-items-end
+            .col-md-4
+              label.form-label.fw-bold Alergia / Agente
+              select.form-select(name="id_alergia", required)
+                option(value="" disabled selected) Seleccione del catálogo...
+                if catalogoAlergias
+                  each al in catalogoAlergias
+                    option(value=al.id_alergia) #{al.nombre} (#{al.categoria})
+            .col-md-3
+              label.form-label.fw-bold Severidad
+              select.form-select(name="severidad", required)
+                option(value="Leve") Leve
+                option(value="Moderada" selected) Moderada
+                option(value="Grave") Grave
+            .col-md-3
+              label.form-label.fw-bold Observaciones
+              input.form-control(type="text", name="observaciones", placeholder="Ej: Rash cutáneo, edema...")
+            .col-md-2
+              button.btn.btn-danger.w-100.fw-bold(type="submit")
+                i.bi.bi-plus-circle.me-1
+                | Agregar
+          div#msgAlergia.mt-2
 
-        form#formCuidados
+        h5 Alergias Registradas del Paciente
+        .table-responsive
+          table.table.table-bordered.table-striped.mt-2
+            thead.table-dark
+              tr
+                th Alergia
+                th Categoría
+                th Severidad
+                th Observaciones
+                th Fecha Registro
+            tbody
+              if internacion.Paciente.AlergiasPaciente && internacion.Paciente.AlergiasPaciente.length > 0
+                each pa in internacion.Paciente.AlergiasPaciente
+                  tr
+                    td.fw-bold #{pa.Alergia ? pa.Alergia.nombre : 'N/D'}
+                    td #{pa.Alergia ? pa.Alergia.categoria : '-'}
+                    td
+                      if pa.severidad === 'Grave'
+                        span.badge.bg-danger Grave
+                      else if pa.severidad === 'Moderada'
+                        span.badge.bg-warning.text-dark Moderada
+                      else
+                        span.badge.bg-info.text-dark Leve
+                    td #{pa.observaciones || '-'}
+                    td #{pa.fecha_registro ? new Date(pa.fecha_registro).toLocaleDateString('es-AR') : '-'}
+              else
+                tr
+                  td.text-center.text-muted(colspan="5") El paciente no posee alergias registradas.
+
+      // PLAN DE CUIDADOS Y ADMINISTRACIÓN DE MEDICACIÓN
+      .tab-pane.fade#cuidados(role="tabpanel")
+        // Indicaciones Médicas vigentes (Solo lectura para que el enfermero sepa qué administrar)
+        h5.text-primary.mb-2
+          i.bi.bi-clipboard2-pulse.me-1
+          | Indicaciones Médicas Vigentes (Solo Lectura)
+        .table-responsive.mb-4
+          table.table.table-sm.table-bordered.bg-light
+            thead.table-secondary
+              tr
+                th Fecha Indicación
+                th Médico
+                th Medicamentos y Dosis
+                th Terapias / Procedimientos
+                th Control del Dolor
+            tbody
+              if internacion.Tratamientos && internacion.Tratamientos.length > 0
+                each trat in internacion.Tratamientos
+                  tr
+                    td #{new Date(trat.fecha_indicacion).toLocaleString('es-AR')}
+                    td #{trat.Medico ? trat.Medico.nombre + ' ' + trat.Medico.apellido : 'Médico de Guardia'}
+                    td.fw-bold #{trat.medicamentos_dosis || '-'}
+                    td #{trat.terapias_procedimientos || '-'}
+                    td #{trat.control_dolor || '-'}
+              else
+                tr
+                  td.text-center.text-muted(colspan="5") El médico aún no ha cargado indicaciones farmacológicas para esta internación.
+
+        hr
+
+        h5.mb-3 Registrar Nuevo Cuidado / Administración de Medicación
+        form#formCuidados.p-3.bg-light.border.rounded.mb-4
           input(type="hidden", name="id_internacion", value=internacion.id_internacion)
           input(type="hidden", name="id_paciente", value=internacion.id_paciente)
           input(type="hidden", name="id_enfermero", value="1")
 
           .mb-3
-            label.form-label Plan de Cuidados Preliminar
-            textarea.form-control(name="plan_cuidados", rows="3", required=!planCuid.id_cuidados, readonly=planCuid.id_cuidados)= planCuid.plan_cuidados
+            label.form-label.fw-bold Plan de Cuidados / Acciones Realizadas
+            textarea.form-control(name="plan_cuidados", rows="2", placeholder="Ej: Control de vía periférica, curación de herida, higiene...", required)
           
           .row.mb-3
             .col-md-6
-              label.form-label Intervenciones Inmediatas
-              textarea.form-control(name="intervenciones", rows="2", readonly=planCuid.id_cuidados)= planCuid.intervenciones
+              label.form-label.fw-bold Intervenciones Clínicas
+              textarea.form-control(name="intervenciones", rows="2", placeholder="Ej: Nebulización con solución fisiológica")
             .col-md-6
-              label.form-label Medicamentos Administrados
-              textarea.form-control(name="medicamentos_administrados", rows="2", readonly=planCuid.id_cuidados)= planCuid.medicamentos_administrados
+              label.form-label.fw-bold Medicamentos Administrados
+              textarea.form-control(name="medicamentos_administrados", rows="2", placeholder="Ej: Amoxicilina 500mg VO administrada 20:00 hs")
 
           .mb-3
-            label.form-label Observaciones
-            textarea.form-control(name="observaciones", rows="2", readonly=planCuid.id_cuidados)= planCuid.observaciones
+            label.form-label.fw-bold Observaciones de Enfermería
+            textarea.form-control(name="observaciones", rows="2", placeholder="Respuesta del paciente al tratamiento...")
 
-          if !planCuid.id_cuidados
-            button.btn.btn-primary(type="submit") Guardar Plan de Cuidados
+          button.btn.btn-primary.fw-bold(type="submit")
+            i.bi.bi-check2-circle.me-1
+            | Registrar Cuidado de Enfermería
           div#msgCuidados.mt-2
 
+        h5 Historial de Cuidados Realizados
+        .table-responsive
+          table.table.table-bordered.table-striped.mt-2
+            thead.table-dark
+              tr
+                th Fecha y Hora
+                th Plan de Cuidados
+                th Intervenciones
+                th Medicación Administrada
+                th Observaciones
+            tbody
+              if internacion.CuidadosEnfermerias && internacion.CuidadosEnfermerias.length > 0
+                each cuid in internacion.CuidadosEnfermerias
+                  tr
+                    td #{cuid.fecha ? new Date(cuid.fecha).toLocaleString('es-AR') : '-'}
+                    td #{cuid.plan_cuidados}
+                    td #{cuid.intervenciones || '-'}
+                    td.fw-bold #{cuid.medicamentos_administrados || '-'}
+                    td #{cuid.observaciones || '-'}
+              else
+                tr
+                  td.text-center.text-muted(colspan="5") Aún no se han registrado cuidados de enfermería.
+
 block scripts
-  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
   script.
     $(document).ready(function() {
-      // Manejo del envío asíncrono para Signos Vitales
+      // Signos Vitales
       $('#formSignos').on('submit', function(e) {
         e.preventDefault();
-        const form = $(this);
-        $.ajax({
-          url: 'signos-vitales',
+        const form = $(this);$.ajax({
+          url: '/enfermeria/signos-vitales',
           method: 'POST',
           data: form.serialize(),
           success: function(res) {
@@ -168,18 +282,17 @@ block scripts
             form.find('button[type="submit"]').remove();
             form.find('input').attr('readonly', true);
           },
-          error: function(err) {
+          error: function() {
             $('#msgSignos').html('<div class="alert alert-danger">Error al guardar los signos vitales.</div>');
           }
         });
       });
 
-      // Manejo del envío asíncrono para Historial Médico
+      // Historial Médico
       $('#formHistorial').on('submit', function(e) {
         e.preventDefault();
-        const form = $(this);
-        $.ajax({
-          url: 'historial',
+        const form = $(this);$.ajax({
+          url: '/enfermeria/historial',
           method: 'POST',
           data: form.serialize(),
           success: function(res) {
@@ -187,26 +300,42 @@ block scripts
             form.find('button[type="submit"]').remove();
             form.find('input, textarea').attr('readonly', true);
           },
-          error: function(err) {
+          error: function() {
             $('#msgHistorial').html('<div class="alert alert-danger">Error al guardar el historial médico.</div>');
           }
         });
       });
 
-      // Manejo del envío asíncrono para Plan de Cuidados
+      // Alergias (3FN)
+      $('#formAlergia').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);$.ajax({
+          url: '/enfermeria/alergia',
+          method: 'POST',
+          data: form.serialize(),
+          success: function(res) {
+            $('#msgAlergia').html('<div class="alert alert-success">' + res.mensaje + '</div>');
+            setTimeout(() => { window.location.reload(); }, 1000);
+          },
+          error: function(xhr) {
+            const err = xhr.responseJSON ? xhr.responseJSON.error : 'Error al registrar la alergia.';
+            $('#msgAlergia').html('<div class="alert alert-danger">' + err + '</div>');
+          }
+        });
+      });
+
+      // Plan de Cuidados
       $('#formCuidados').on('submit', function(e) {
         e.preventDefault();
-        const form = $(this);
-        $.ajax({
-          url: 'plan-cuidados',
+        const form = $(this);$.ajax({
+          url: '/enfermeria/plan-cuidados',
           method: 'POST',
           data: form.serialize(),
           success: function(res) {
             $('#msgCuidados').html('<div class="alert alert-success">' + (res.mensaje || 'Plan de cuidados registrado exitosamente.') + '</div>');
-            form.find('button[type="submit"]').remove();
-            form.find('textarea').attr('readonly', true);
+            setTimeout(() => { window.location.reload(); }, 1000);
           },
-          error: function(err) {
+          error: function() {
             $('#msgCuidados').html('<div class="alert alert-danger">Error al guardar el plan de cuidados.</div>');
           }
         });

@@ -117,7 +117,6 @@ block content
               
               // Botones para internaciones activas
               if internacion.estado === 'Activa'
-                //- 1. Botón de traslado integrado con los datos del paciente
                 button.btn.btn-sm.btn-warning.me-1(
                   type="button"
                   onclick=`abrirModalTraslado(${internacion.id_internacion}, '${internacion.Paciente ? internacion.Paciente.nombre + " " + internacion.Paciente.apellido : "Paciente"}')`
@@ -150,38 +149,44 @@ block content
               strong#textDniTemporal ...
             
             form#formIdentificar(method="POST")
+              .mb-3
+                label.form-label.fw-bold DNI Real
+                .input-group
+                  input#inputDniNN.form-control(type="number" name="dni" required min="1000000" max="999999999" placeholder="Ingrese DNI y presione Buscar...")
+                  button#btnBuscarDniNN.btn.btn-primary(type="button")
+                    i.bi.bi-search.me-1
+                    | Buscar
+                small#msgBusquedaDni.form-text.d-block.mt-1
+
               .row.mb-3
                 .col-md-6
                   label.form-label.fw-bold Nombre Real
-                  input.form-control(type="text" name="nombre" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
+                  input#inputNombreNN.form-control(type="text" name="nombre" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
                 .col-md-6
                   label.form-label.fw-bold Apellido Real
-                  input.form-control(type="text" name="apellido" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
+                  input#inputApellidoNN.form-control(type="text" name="apellido" required minlength="2" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+" title="Solo se permiten letras y espacios")
               .row.mb-3
                 .col-md-6
-                  label.form-label.fw-bold DNI Real
-                  input.form-control(type="number" name="dni" required min="1000000" max="999999999" title="Debe ingresar un DNI válido sin puntos ni espacios")
-                .col-md-6
                   label.form-label.fw-bold Género
-                  select.form-select(name="genero" required)
+                  select#selectGeneroNN.form-select(name="genero" required)
                     option(value="" disabled selected) Seleccione...
                     option(value="Masculino") Masculino
                     option(value="Femenino") Femenino
                     option(value="Otro") Otro
-              .row.mb-3
-                .col-md-4
+                .col-md-6
                   label.form-label.fw-bold Edad
-                  input.form-control(type="number" name="edad" min="0" max="130")
-                .col-md-8
+                  input#inputEdadNN.form-control(type="number" name="edad" min="0" max="130")
+              .row.mb-3
+                .col-md-6
                   label.form-label.fw-bold Obra Social
-                  select.form-select(name="id_obra_social")
+                  select#selectObraSocialNN.form-select(name="id_obra_social")
                     option(value="") Seleccione... / No Posee
                     if obrasSociales
                       each os in obrasSociales
                         option(value=os.id_obra_social)= os.nombre
-              .mb-3
-                label.form-label.fw-bold Teléfono
-                input.form-control(type="text" name="telefono" pattern="[0-9]{7,15}" title="Ingrese un número de teléfono válido")
+                .col-md-6
+                  label.form-label.fw-bold Teléfono
+                  input#inputTelefonoNN.form-control(type="text" name="telefono" pattern="[0-9]{7,15}" title="Ingrese un número de teléfono válido")
                 
               .modal-footer.pe-0.pb-0
                 button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Cancelar
@@ -229,11 +234,7 @@ block content
       |  |  
       span.text-danger.fw-bold 🛏️ Ocupada
 
-  // CDN DataTables
-  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
-  script(src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js")
-  link(rel="stylesheet", href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css")
-
+block scripts
   script.
     $(document).ready(function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -260,14 +261,57 @@ block content
 
       $('#filtroEstado').on('change', function() {
         tabla.column(9).search(this.value).draw();
-      }); 
+      });
 
+      // Resetear formulario al abrir modal de identificación NN
       $('#tablaInternaciones tbody').on('click', '.btn-identificar', function() {
         const idPaciente = $(this).attr('data-id');
         const dniTemporal = $(this).attr('data-dni');
 
         $('#textDniTemporal').text(dniTemporal);
         $('#formIdentificar').attr('action', '/pacientes/identificar/' + idPaciente);
+        $('#formIdentificar')[0].reset();
+        $('#msgBusquedaDni').text('').removeClass('text-success text-info text-danger');
+      });
+
+      // Buscar paciente existente por DNI y autocompletar
+      $('#btnBuscarDniNN').on('click', function() {
+        const dni = $('#inputDniNN').val().trim();
+        const $msg = $('#msgBusquedaDni');
+
+        if (!dni || dni.length < 6) {
+          $msg.text('Ingrese un DNI válido de al menos 6 dígitos.').removeClass('text-success text-info').addClass('text-danger');
+          return;
+        }
+
+        $msg.text('Buscando en el padrón...').removeClass('text-success text-danger').addClass('text-info');
+
+        $.ajax({
+          url: `/pacientes/buscar-dni/${dni}`,
+          method: 'GET',
+          success: function(res) {
+            if (res.encontrado && res.paciente) {
+              const p = res.paciente;
+              $('#inputNombreNN').val(p.nombre);
+              $('#inputApellidoNN').val(p.apellido);
+              $('#selectGeneroNN').val(p.genero);
+              $('#inputEdadNN').val(p.edad);
+              $('#selectObraSocialNN').val(p.id_obra_social);
+              $('#inputTelefonoNN').val(p.telefono);
+
+              $msg.text('✅ Paciente encontrado en el sistema. Datos cargados automáticamente.')
+                  .removeClass('text-info text-danger')
+                  .addClass('text-success fw-bold');
+            } else {
+              $msg.text('ℹ️ Paciente no registrado previamente. Complete los datos para darle de alta.')
+                  .removeClass('text-success text-danger')
+                  .addClass('text-info');
+            }
+          },
+          error: function() {
+            $msg.text('Error al consultar el DNI en el servidor.').removeClass('text-success text-info').addClass('text-danger');
+          }
+        });
       });
 
       // Manejador de cambio de habitación para rellenar las camas vía AJAX
@@ -280,15 +324,13 @@ block content
           return;
         }
 
-        // Buscamos las camas de esa habitación
         $.ajax({
-          url: `/habitaciones/${idHabitacion}/camas`, 
+          url: `/habitaciones/${idHabitacion}/camas`,
           method: 'GET',
           success: function(res) {
             let opciones = '<option value="" disabled selected>-- Seleccione Cama --</option>';
             if (res && res.length > 0) {
               res.forEach(cama => {
-                // Solo dejamos elegir camas libres, disponibles u higienizadas
                 const est = cama.estado.toLowerCase();
                 if (['libre', 'disponible', 'higienizada'].includes(est)) {
                   opciones += `<option value="${cama.id_cama}">Cama ${cama.numero} (${cama.estado})</option>`;
@@ -323,16 +365,13 @@ block content
       });
     }
 
-    // Funciones para controlar el Modal de Traslado
     function abrirModalTraslado(idInternacion, nombreCompleto) {
       $('#trasladoInternacionId').val(idInternacion);
       $('#textPacienteTraslado').text(nombreCompleto);
       
-      // Resetear campos
       $('#selectHabitacion').val('');
       $('#selectCama').html('<option value="" disabled selected>-- Seleccione primero una habitación --</option>').prop('disabled', true);
       
-      // Abrimos el modal con Bootstrap
       const myModal = new bootstrap.Modal(document.getElementById('modalTraslado'));
       myModal.show();
     }
@@ -356,7 +395,6 @@ block content
           id_nueva_cama: idNuevaCama
         }),
         success: function(res) {
-          // Ocultamos el modal
           bootstrap.Modal.getInstance(document.getElementById('modalTraslado')).hide();
           dispararToastSuccess(res.message || 'Paciente trasladado con éxito.');
           setTimeout(() => { location.reload(); }, 1500);
@@ -368,7 +406,6 @@ block content
       });
     }
 
-    // Funciones auxiliares para Toasts flotantes
     function dispararToastSuccess(mensaje) {
       $('#toastSuccessTexto').text(mensaje);
       const toastElement = document.getElementById('toastSuccess');

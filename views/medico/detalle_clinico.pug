@@ -9,7 +9,7 @@ block content
       a.btn.btn-outline-secondary(href="/medico") Volver al listado
 
     // Tarjeta de Información del Paciente
-    .card.mb-4.shadow-sm.border-start.border-danger.border-4
+    .card.mb-3.shadow-sm.border-start.border-danger.border-4
       .card-body
         .row
           .col-md-3
@@ -27,6 +27,17 @@ block content
               | Hab. #{internacion.Cama.Habitacion.numero} - Cama #{internacion.Cama.numero}
             else
               | N/D
+
+    // Alerta de Alergias del Paciente antes de prescribir
+    if internacion.Paciente && internacion.Paciente.AlergiasPaciente && internacion.Paciente.AlergiasPaciente.length > 0
+      .alert.alert-danger.shadow-sm.mb-4
+        i.bi.bi-exclamation-octagon-fill.me-2
+        strong ¡ALERTA DE ALERGIAS DEL PACIENTE!: 
+        each pa in internacion.Paciente.AlergiasPaciente
+          span.badge.bg-dark.ms-2
+            | #{pa.Alergia ? pa.Alergia.nombre : 'Alergia'} - Severidad: #{pa.severidad}
+            if pa.observaciones
+              |  (#{pa.observaciones})
 
     // Pestañas del Panel Médico
     ul.nav.nav-tabs#medicoTabs(role="tablist")
@@ -156,7 +167,7 @@ block content
       .tab-pane.fade#alta(role="tabpanel")
         .alert.alert-warning
           h5 ⚠️ Atención Médica de Salida
-          p Asegúrese de que el paciente se encuentre clínicamente apto para el egreso institutional. Al confirmar el alta, la internación se dará por concluida y la cama se liberará automáticamente pasando al estado de higiene obligatoria.
+          p Asegúrese de que el paciente se encuentre clínicamente apto para el egreso institucional. Al confirmar el alta, la internación se dará por concluida y la cama se liberará automáticamente pasando al estado de higiene obligatoria.
 
         form#formAlta.p-3.border.rounded.bg-white
           input(type="hidden", name="id_internacion", value=internacion.id_internacion)

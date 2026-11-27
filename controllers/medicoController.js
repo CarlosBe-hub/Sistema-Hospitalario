@@ -1,9 +1,9 @@
 const { 
   Internacion, Paciente, Diagnostico, Tratamiento, 
-  AltaMedica, SignosVitales, Cama, Habitacion, Medico, Especializacion, Guardia 
+  AltaMedica, SignosVitales, Cama, Habitacion, Medico, 
+  Especializacion, Guardia, Alergia, PacienteAlergia, Admision 
 } = require('../models');
 const { Op } = require('sequelize');
-
 
 // Mostrar panel principal con pacientes internados
 exports.vistaPacientesInternados = async (req, res) => {
@@ -36,7 +36,17 @@ exports.detallePaciente = async (req, res) => {
 
     const internacion = await Internacion.findByPk(id_internacion, {
       include: [
-        { model: Paciente, as: 'Paciente' },
+        { 
+          model: Paciente, 
+          as: 'Paciente',
+          include: [
+            {
+              model: PacienteAlergia,
+              as: 'AlergiasPaciente',
+              include: [{ model: Alergia, as: 'Alergia' }]
+            }
+          ]
+        },
         { model: SignosVitales }, 
         { model: Diagnostico, include: [{ model: Medico }] },
         { model: Tratamiento, include: [{ model: Medico }] },
@@ -64,7 +74,7 @@ exports.detallePaciente = async (req, res) => {
   }
 };
 
-// Guardar Evaluación Medica y Diagnostico
+// Guardar Evaluación Médica y Diagnóstico
 exports.guardarDiagnostico = async (req, res) => {
   try {
     const { id_internacion, id_paciente, id_medico, descripcion, pruebas_solicitadas } = req.body;
@@ -92,7 +102,7 @@ exports.guardarDiagnostico = async (req, res) => {
   }
 };
 
-// Guardar un nuevo Tratamiento o Indicacion Medica
+// Guardar un nuevo Tratamiento o Indicación Médica
 exports.guardarTratamiento = async (req, res) => {
   try {
     const { 
@@ -115,7 +125,7 @@ exports.guardarTratamiento = async (req, res) => {
     });
 
     res.status(200).json({ 
-      mensaje: 'Indicaciones medicas y tratamiento guardados correctamente.',
+      mensaje: 'Indicaciones médicas y tratamiento guardados correctamente.',
       treatment: nuevoTratamiento
     });
   } catch (error) {
@@ -129,7 +139,7 @@ exports.darAlta = async (req, res) => {
   try {
     const { 
       id_internacion, id_medico, instrucciones_cuidado, 
-      recetas_medicas, recommendations_seguimiento 
+      recetas_medicas, recomendaciones_seguimiento 
     } = req.body;
 
     if (!id_internacion || !id_medico) {
@@ -144,7 +154,7 @@ exports.darAlta = async (req, res) => {
     const todasLasInstrucciones = `
       Cuidados: ${instrucciones_cuidado || 'Sin indicaciones particulares'}. 
       Recetas: ${recetas_medicas || 'Ninguna'}. 
-      Seguimiento: ${recommendations_seguimiento || 'Control por consultorio externo'}.
+      Seguimiento: ${recomendaciones_seguimiento || 'Control por consultorio externo'}.
     `.trim();
 
     const nuevaAlta = await AltaMedica.create({
@@ -152,7 +162,7 @@ exports.darAlta = async (req, res) => {
       id_medico,              
       fecha_salida: new Date(), 
       estado: 'Finalizado',     
-      instructions_cuidados: todasLasInstrucciones
+      instrucciones_cuidados: todasLasInstrucciones
     });
 
     await internacion.update({
@@ -168,11 +178,10 @@ exports.darAlta = async (req, res) => {
     }
 
     if (internacion.id_admision) {
-        const { Admisiones } = require('../models'); 
-        const admision = await Admisiones.findByPk(internacion.id_admision);
-        if (admision) {
-            await admision.update({ estado: 'Inactivo' });
-        }
+      const admision = await Admision.findByPk(internacion.id_admision);
+      if (admision) {
+        await admision.update({ estado: 'Inactivo' });
+      }
     }
 
     res.status(200).json({ 
@@ -274,7 +283,7 @@ exports.crearMedico = async (req, res) => {
     if (existeMatricula) {
       const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
       const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
-      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre_guardia', 'ASC']] });
       return res.render('medico/gestionMedico', {
         medicos, especializaciones, guardias,
         errorMsg: `La matrícula '${nro_matricula}' ya está registrada por otro médico.`
@@ -285,7 +294,7 @@ exports.crearMedico = async (req, res) => {
     if (existeDni) {
       const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
       const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
-      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre_guardia', 'ASC']] });
       return res.render('medico/gestionMedico', {
         medicos, especializaciones, guardias,
         errorMsg: `El DNI '${dni}' ya pertenece a un médico del sistema.`
@@ -321,7 +330,7 @@ exports.editarMedico = async (req, res) => {
     if (dniRepetido) {
       const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
       const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
-      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre_guardia', 'ASC']] });
       return res.render('medico/gestionMedico', {
         medicos, especializaciones, guardias,
         errorMsg: `El DNI '${dni}' ya está registrado por otro médico.`
@@ -334,14 +343,13 @@ exports.editarMedico = async (req, res) => {
     if (matriculaRepetida) {
       const medicos = await Medico.findAll({ include: [{ model: Guardia, as: 'guardia' }], order: [['id_medico', 'DESC']] });
       const especializaciones = await Especializacion.findAll({ order: [['nombre', 'ASC']] });
-      const guardias = await Guardia.findAll({ order: [['nombre', 'ASC']] });
+      const guardias = await Guardia.findAll({ order: [['nombre_guardia', 'ASC']] });
       return res.render('medico/gestionMedico', {
         medicos, especializaciones, guardias,
         errorMsg: `La matrícula '${nro_matricula}' ya pertenece a otro médico.`
       });
     }
 
-    // Ejecutar actualización
     await Medico.update({
       nombre,
       apellido,

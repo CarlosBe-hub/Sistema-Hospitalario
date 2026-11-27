@@ -5,6 +5,7 @@ const sequelize = require('../config/db');
 const Admision = require('./AdmisionModel');
 const Ala = require('./AlaModel');
 const AltaMedica = require('./AltaMedicaModel');
+const Alergia = require('./AlergiaModel');
 const Cama = require('./CamaModel');
 const ContactoEmergencia = require('./ContactoEmergenciaModel');
 const CuidadosEnfermeria = require('./CuidadosEnfermeriaModel');
@@ -20,6 +21,7 @@ const MotivoInternacion = require('./MotivoInternacionModel');
 const MotivoAdmision = require('./MotivoAdmisionModel');
 const ObraSocial = require('./ObraSocialModel');
 const Paciente = require('./PacienteModel');
+const PacienteAlergia = require('./PacienteAlergiaModel');
 const SignosVitales = require('./SignosVitalesModel');
 const Tratamiento = require('./TratamientoModel');
 const Rol = require('./Rol');
@@ -47,6 +49,14 @@ Admision.belongsTo(Paciente, { foreignKey: 'id_paciente', as: 'paciente' });
 
 Paciente.belongsTo(ObraSocial, { foreignKey: 'id_obra_social', as: 'obraSocial' });
 ObraSocial.hasMany(Paciente, { foreignKey: 'id_obra_social', as: 'pacientes' });
+
+// ─────────────────────────────────────────────
+// ALERGIAS
+Paciente.hasMany(PacienteAlergia, { foreignKey: 'id_paciente', as: 'AlergiasPaciente' });
+PacienteAlergia.belongsTo(Paciente, { foreignKey: 'id_paciente' });
+
+Alergia.hasMany(PacienteAlergia, { foreignKey: 'id_alergia' });
+PacienteAlergia.belongsTo(Alergia, { foreignKey: 'id_alergia', as: 'Alergia' });
 
 // ─────────────────────────────────────────────
 // ADMISIÓN E INTERNACIÓN 
@@ -147,6 +157,7 @@ module.exports = {
   Admision,
   Ala,
   AltaMedica,
+  Alergia,
   Cama,
   ContactoEmergencia,
   CuidadosEnfermeria,
@@ -162,6 +173,7 @@ module.exports = {
   MotivoAdmision,
   ObraSocial,
   Paciente,
+  PacienteAlergia,
   SignosVitales,
   Tratamiento,
   Rol,

@@ -17,10 +17,13 @@ router.post('/', PacienteController.crearPaciente);
 // Ruta para listar
 router.get('/', PacienteController.verActivos);
 
+// Ruta para buscar datos completos de un paciente por DNI 
+router.get('/buscar-dni/:dni', PacienteController.buscarPorDNI);
+
 // Ruta para validar si el DNI ya existe
 router.get('/validar-dni/:dni', PacienteController.validarDNI);
 
-// Ruta para procesar la identificación desde el modal del listado de internaciones
+// Ruta para procesar la identificacion desde el modal del listado de internaciones
 router.post('/identificar/:id', PacienteController.procesarIdentificacionNN);
 
 module.exports = router;
